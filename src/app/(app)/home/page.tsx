@@ -81,11 +81,14 @@ export default function HomePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-[26px] italic text-ink">Home</h1>
-        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-parchment bg-cream">
+        <Link
+          href="/settings"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-parchment bg-cream"
+        >
           <span className="font-sans text-[10px] text-stone">
             {(profileData.full_name as string)?.charAt(0)?.toUpperCase() ?? "?"}
           </span>
-        </div>
+        </Link>
       </div>
 
       {/* Alignment Section */}
