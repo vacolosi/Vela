@@ -18,7 +18,7 @@ export function BottomNav() {
       {navItems.map((item) =>
         item.isAction ? (
           <Link key={item.href} href={item.href} className="flex flex-col items-center gap-1">
-            <div className="w-10 h-10 rounded-full bg-ink flex items-center justify-center -mt-5 shadow-lg">
+            <div className="w-10 h-10 rounded-full bg-ink flex items-center justify-center shadow-lg">
               <span className="text-cream text-xl font-light leading-none">+</span>
             </div>
           </Link>
