@@ -5,7 +5,9 @@
       "Bash(npx create-next-app@latest:*)",
       "Bash(rm:*)",
       "Bash(cp:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest:*)"
     ]
   }
 }
