@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { useProductSearch } from "@/lib/hooks/use-products";
 import { ProductDot } from "@/components/product/product-dot";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { EmptyState } from "@/components/ui/empty-state";
 
 /* ── hardcoded MVP data ─────────────────────────────── */
 
@@ -102,12 +104,13 @@ export default function ExplorePage() {
       {isSearching && (
         <div className="flex-1 overflow-y-auto">
           {isLoading && (
-            <p className="text-stone text-xs text-center py-4">Searching...</p>
+            <LoadingSpinner className="py-8" />
           )}
           {!isLoading && products && products.length === 0 && (
-            <p className="text-stone text-xs text-center py-4">
-              No products found
-            </p>
+            <EmptyState
+              title="No products found"
+              description="Try a different search term or browse our curated selections below."
+            />
           )}
           {products &&
             products.map((product) => (

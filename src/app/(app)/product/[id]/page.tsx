@@ -7,6 +7,7 @@ import { useAlignment } from "@/lib/hooks/use-alignment";
 import { useAddToCabinet } from "@/lib/hooks/use-cabinet";
 import { ProductDot } from "@/components/product/product-dot";
 import { AlignmentBar } from "@/components/product/alignment-bar";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { Product } from "@/lib/engine/types";
 
 const supabase = createClient();
@@ -149,7 +150,7 @@ export default function ProductPage() {
               Alignment
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full border-2 border-stone border-t-transparent animate-spin" />
+              <LoadingSpinner />
               <span className="font-sans text-xs text-clay font-light">
                 Analyzing alignment...
               </span>

@@ -4,6 +4,7 @@ import { useProfile } from "@/lib/hooks/use-profile";
 import { useUser } from "@/providers/supabase-provider";
 import { createClient } from "@/lib/supabase/client";
 import { Switch } from "@/components/ui/switch";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -94,7 +95,7 @@ function participationLabel(level: string | undefined | null): string {
 /* ------------------------------------------------------------------ */
 
 export default function SettingsPage() {
-  const { data: profile } = useProfile();
+  const { data: profile, isLoading: profileLoading } = useProfile();
   const { user } = useUser();
   const router = useRouter();
   const supabase = createClient();
@@ -149,6 +150,10 @@ export default function SettingsPage() {
     | Record<string, string>
     | null
     | undefined;
+
+  if (profileLoading) {
+    return <LoadingSpinner className="min-h-[60vh]" />;
+  }
 
   return (
     <div className="px-6 pb-28">

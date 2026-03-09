@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useCabinet, useToggleLineup } from "@/lib/hooks/use-cabinet";
 import { CabinetItem } from "@/components/cabinet/cabinet-item";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const TABS = ["All", "Skincare", "Makeup", "Hair", "Body"] as const;
 type Tab = (typeof TABS)[number];
@@ -83,21 +85,14 @@ export default function CabinetPage() {
 
       {/* Product list */}
       {isLoading ? (
-        <div className="py-12 text-center">
-          <span className="font-sans text-xs text-stone">Loading...</span>
-        </div>
+        <LoadingSpinner className="py-12" />
       ) : filtered.length === 0 ? (
-        <div className="py-12 text-center">
-          <p className="font-sans text-sm text-stone mb-2">
-            Your cabinet is empty.
-          </p>
-          <p className="font-sans text-xs text-stone">
-            <Link href="/scan" className="text-vela-blue underline">
-              Scan or search
-            </Link>{" "}
-            to add your first product.
-          </p>
-        </div>
+        <EmptyState
+          title="Your cabinet is empty"
+          description="Scan or search to add your first product."
+          actionLabel="Add a product"
+          actionHref="/scan"
+        />
       ) : (
         <div>
           {filtered.map((item) => (

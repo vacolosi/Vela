@@ -3,6 +3,7 @@
 import { useCabinet } from "@/lib/hooks/use-cabinet";
 import { useProfile } from "@/lib/hooks/use-profile";
 import { ProductDot } from "@/components/product/product-dot";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import Link from "next/link";
 
 const CATEGORIES = [
@@ -38,14 +39,7 @@ export default function HomePage() {
   const loading = cabinetLoading || profileLoading;
 
   if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-parchment border-t-ink" />
-          <p className="font-sans text-xs text-stone font-light">Loading…</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner className="min-h-[60vh]" />;
   }
 
   const items = (cabinet ?? []) as Array<{
