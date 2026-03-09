@@ -121,7 +121,7 @@ export default function HomePage() {
             See all &rarr;
           </Link>
         </div>
-        <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
+        <div className="mt-3 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {selectedForYou.map((product) => (
             <div
               key={product.id}

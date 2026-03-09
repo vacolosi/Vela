@@ -35,9 +35,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full">
       <body
-        className={`${outfit.variable} ${cormorantGaramond.variable} ${jetbrainsMono.variable} bg-vela-white text-ink antialiased`}
+        className={`${outfit.variable} ${cormorantGaramond.variable} ${jetbrainsMono.variable} min-h-screen bg-vela-white text-ink antialiased`}
       >
         <QueryProvider>
           <SupabaseProvider>{children}</SupabaseProvider>

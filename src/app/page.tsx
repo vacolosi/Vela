@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function HeroPage() {
   return (
-    <div className="min-h-screen bg-vela-white flex flex-col">
+    <div className="min-h-screen bg-vela-white flex flex-col max-w-md mx-auto">
       <div className="flex-1 flex flex-col justify-end px-8 pb-12">
         <h1 className="font-serif text-4xl font-light italic text-ink leading-tight mb-4">
           Make beauty

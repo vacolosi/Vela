@@ -33,7 +33,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-vela-white px-4">
+    <div className="flex min-h-screen items-center justify-center bg-vela-white px-4 max-w-md mx-auto">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
           <h1 className="font-serif text-3xl text-ink">Welcome back</h1>
