@@ -14,12 +14,12 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky bottom-0 bg-vela-white border-t border-parchment py-3 pb-2 flex justify-around">
+    <nav className="sticky bottom-0 bg-vela-white border-t border-parchment py-3 pb-2 flex justify-around items-center">
       {navItems.map((item) =>
         item.isAction ? (
-          <Link key={item.href} href={item.href} className="flex flex-col items-center gap-1">
-            <div className="w-10 h-10 rounded-full bg-ink flex items-center justify-center shadow-lg">
-              <span className="text-cream text-xl font-light leading-none">+</span>
+          <Link key={item.href} href={item.href} className="flex flex-col items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-ink flex items-center justify-center">
+              <span className="text-cream text-lg font-light leading-none">+</span>
             </div>
           </Link>
         ) : (
