@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Outfit, JetBrains_Mono } from "next/font/google";
+import { QueryProvider } from "@/providers/query-provider";
+import { SupabaseProvider } from "@/providers/supabase-provider";
 import "./globals.css";
 
 const cormorantGaramond = Cormorant_Garamond({
@@ -37,7 +39,9 @@ export default function RootLayout({
       <body
         className={`${outfit.variable} ${cormorantGaramond.variable} ${jetbrainsMono.variable} bg-vela-white text-ink antialiased`}
       >
-        {children}
+        <QueryProvider>
+          <SupabaseProvider>{children}</SupabaseProvider>
+        </QueryProvider>
       </body>
     </html>
   );
