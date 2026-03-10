@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Minus } from "lucide-react";
 import { ProductDot } from "@/components/product/product-dot";
 
 interface CabinetItemProps {
@@ -9,7 +10,9 @@ interface CabinetItemProps {
   name: string;
   tag: string;
   isActive: boolean;
+  editMode?: boolean;
   onToggleLineup: () => void;
+  onRemove?: () => void;
 }
 
 export function CabinetItem({
@@ -18,10 +21,20 @@ export function CabinetItem({
   name,
   tag,
   isActive,
+  editMode,
   onToggleLineup,
+  onRemove,
 }: CabinetItemProps) {
   return (
     <div className="flex items-center gap-3 py-3 border-b border-parchment">
+      {editMode && (
+        <button
+          onClick={onRemove}
+          className="flex-shrink-0 w-6 h-6 rounded-full bg-risk flex items-center justify-center"
+        >
+          <Minus size={14} className="text-cream" />
+        </button>
+      )}
       <Link href={`/product/${productId}`} className="flex items-center gap-3 flex-1 min-w-0">
         <ProductDot size={36} />
         <div className="flex-1 min-w-0">
@@ -33,19 +46,21 @@ export function CabinetItem({
           </div>
         </div>
       </Link>
-      <div className="flex flex-col items-end gap-1 flex-shrink-0">
-        <span className="font-sans text-[8px] uppercase tracking-[0.06em] px-2 py-0.5 rounded border border-sand text-clay">
-          {tag}
-        </span>
-        {isActive && (
-          <button
-            onClick={onToggleLineup}
-            className="font-mono text-[8px] text-sage"
-          >
-            In lineup
-          </button>
-        )}
-      </div>
+      {!editMode && (
+        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+          <span className="font-sans text-[8px] uppercase tracking-[0.06em] px-2 py-0.5 rounded border border-sand text-clay">
+            {tag}
+          </span>
+          {isActive && (
+            <button
+              onClick={onToggleLineup}
+              className="font-mono text-[8px] text-sage"
+            >
+              In lineup
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

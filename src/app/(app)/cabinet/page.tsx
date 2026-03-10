@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useCabinet, useToggleLineup } from "@/lib/hooks/use-cabinet";
+import { useCabinet, useToggleLineup, useRemoveFromCabinet } from "@/lib/hooks/use-cabinet";
 import { CabinetItem } from "@/components/cabinet/cabinet-item";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -26,8 +26,10 @@ function getTag(product: {
 
 export default function CabinetPage() {
   const [activeTab, setActiveTab] = useState<Tab>("All");
+  const [editMode, setEditMode] = useState(false);
   const { data: items, isLoading } = useCabinet();
   const toggleLineup = useToggleLineup();
+  const removeFromCabinet = useRemoveFromCabinet();
 
   const filtered =
     items?.filter((item) => {
@@ -46,12 +48,12 @@ export default function CabinetPage() {
       {/* Header */}
       <div className="flex items-baseline justify-between mb-6">
         <h1 className="font-serif text-2xl italic text-ink">Cabinet</h1>
-        <Link
-          href="/cabinet"
+        <button
+          onClick={() => setEditMode(!editMode)}
           className="font-sans text-xs text-vela-blue"
         >
-          Edit
-        </Link>
+          {editMode ? "Done" : "Edit"}
+        </button>
       </div>
 
       {/* Tabs */}
@@ -107,12 +109,14 @@ export default function CabinetPage() {
                   : ""
               }
               isActive={item.is_active}
+              editMode={editMode}
               onToggleLineup={() =>
                 toggleLineup.mutate({
                   id: item.id,
                   isActive: !item.is_active,
                 })
               }
+              onRemove={() => removeFromCabinet.mutate(item.id)}
             />
           ))}
         </div>
