@@ -80,11 +80,18 @@ If you cannot identify any products, return an empty array: []`,
     for (const detected of detectedProducts) {
       const searchTerm = `${detected.brand} ${detected.product_name}`;
 
-      // Try exact-ish match first (brand + name)
+      const brandPattern = `%${detected.brand}%`;
+      const stopWords = new Set(["the", "for", "and", "with", "from", "that", "this", "your", "our"]);
+      const words = detected.product_name
+        .split(/\s+/)
+        .map((w) => w.toLowerCase().replace(/[^a-z0-9]/g, ""))
+        .filter((w) => w.length > 2 && !stopWords.has(w));
+
+      // Strategy 1: Exact phrase match (brand + full name)
       const { data: exactMatch } = await supabase
         .from("products")
         .select("product_id, brand, product_name, category, subcategory, price")
-        .ilike("brand", `%${detected.brand}%`)
+        .ilike("brand", brandPattern)
         .ilike("product_name", `%${detected.product_name}%`)
         .limit(1);
 
@@ -97,12 +104,42 @@ If you cannot identify any products, return an empty array: []`,
         continue;
       }
 
-      // Try fuzzy match — split product name into key words
-      const words = detected.product_name.split(/\s+/).filter((w) => w.length > 3);
-      const brandPattern = `%${detected.brand}%`;
-      let fuzzyMatch = null;
+      // Strategy 2: Brand + ALL key words (any order)
+      // e.g. "Fine Hair Conditioner" matches "Conditioner for Fine Hair"
+      let allWordsMatch = null;
+      if (words.length > 0) {
+        let query = supabase
+          .from("products")
+          .select("product_id, brand, product_name, category, subcategory, price")
+          .ilike("brand", brandPattern);
+        for (const word of words) {
+          query = query.ilike("product_name", `%${word}%`);
+        }
+        const { data } = await query.limit(5);
+        if (data && data.length > 0) {
+          allWordsMatch = data;
+        }
+      }
 
-      // Try brand + each significant word
+      if (allWordsMatch && allWordsMatch.length > 0) {
+        // Score by how many words match — pick the best
+        const scored = allWordsMatch.map((p) => {
+          const nameLower = p.product_name.toLowerCase();
+          const matchCount = words.filter((w) => nameLower.includes(w)).length;
+          return { ...p, score: matchCount };
+        });
+        scored.sort((a, b) => b.score - a.score);
+        const best = scored[0];
+        results.push({
+          detected_name: searchTerm,
+          matched_product: { product_id: best.product_id, brand: best.brand, product_name: best.product_name, category: best.category, subcategory: best.subcategory, price: best.price },
+          confidence: best.score === words.length ? "high" : "low",
+        });
+        continue;
+      }
+
+      // Strategy 3: Brand + any single key word
+      let singleWordMatch = null;
       for (const word of words) {
         const { data } = await supabase
           .from("products")
@@ -110,29 +147,16 @@ If you cannot identify any products, return an empty array: []`,
           .ilike("brand", brandPattern)
           .ilike("product_name", `%${word}%`)
           .limit(3);
-
         if (data && data.length > 0) {
-          fuzzyMatch = data;
+          singleWordMatch = data;
           break;
         }
       }
 
-      // Fallback: brand-only match
-      if (!fuzzyMatch) {
-        const { data } = await supabase
-          .from("products")
-          .select("product_id, brand, product_name, category, subcategory, price")
-          .ilike("brand", brandPattern)
-          .limit(3);
-        if (data && data.length > 0) {
-          fuzzyMatch = data;
-        }
-      }
-
-      if (fuzzyMatch && fuzzyMatch.length > 0) {
+      if (singleWordMatch && singleWordMatch.length > 0) {
         results.push({
           detected_name: searchTerm,
-          matched_product: fuzzyMatch[0],
+          matched_product: singleWordMatch[0],
           confidence: "low",
         });
       } else {
