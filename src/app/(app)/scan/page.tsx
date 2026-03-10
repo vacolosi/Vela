@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { X, Camera, Image, Search, Check, Loader2 } from "lucide-react";
 import { useAddToCabinet } from "@/lib/hooks/use-cabinet";
@@ -53,15 +53,19 @@ export default function ScanPage() {
         video: { facingMode: "environment" },
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
       setCameraActive(true);
       setError(null);
     } catch {
       setError("Unable to access camera. Please allow camera permissions.");
     }
   }, []);
+
+  // Attach stream to video element after it mounts
+  useEffect(() => {
+    if (cameraActive && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [cameraActive]);
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -224,7 +228,7 @@ export default function ScanPage() {
     // Live camera mode
     if (cameraActive) {
       return (
-        <div className="bg-ink min-h-[calc(100vh-60px)] flex flex-col relative">
+        <div className="bg-ink h-[calc(100dvh-60px)] flex flex-col relative">
           <button
             onClick={() => { stopCamera(); }}
             className="absolute top-4 left-4 text-stone z-20"
@@ -265,7 +269,7 @@ export default function ScanPage() {
 
     // Choose mode: Take Photo or Upload
     return (
-      <div className="bg-ink min-h-[calc(100vh-60px)] flex flex-col relative">
+      <div className="bg-ink h-[calc(100dvh-60px)] flex flex-col relative">
         <button
           onClick={() => router.back()}
           className="absolute top-4 left-4 text-stone z-10"
@@ -328,7 +332,7 @@ export default function ScanPage() {
   // ── Processing phase ──
   if (phase === "processing") {
     return (
-      <div className="bg-ink min-h-[calc(100vh-60px)] flex flex-col items-center justify-center px-6">
+      <div className="bg-ink h-[calc(100dvh-60px)] flex flex-col items-center justify-center px-6">
         <Loader2 size={32} className="text-cream animate-spin mb-4" />
         <p className="text-cream font-sans text-sm">Identifying products...</p>
         <p className="text-stone text-xs mt-2">This may take a few seconds</p>
@@ -339,7 +343,7 @@ export default function ScanPage() {
   // ── Manual search phase ──
   if (phase === "manual-search") {
     return (
-      <div className="bg-ink min-h-[calc(100vh-60px)] flex flex-col">
+      <div className="bg-ink h-[calc(100dvh-60px)] flex flex-col">
         <div className="px-5 pt-6 pb-4 flex items-center justify-between">
           <button
             onClick={() => {
