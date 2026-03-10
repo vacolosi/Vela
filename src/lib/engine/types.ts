@@ -20,6 +20,7 @@ export interface Product {
   pairs_with: string[];
   formula_notes: string | null;
   price: number | null;
+  source_url: string | null;
 }
 
 export interface UserProfile {

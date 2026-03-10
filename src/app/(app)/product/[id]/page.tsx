@@ -197,9 +197,16 @@ export default function ProductPage() {
               ? "Adding..."
               : "Add to Cabinet"}
         </button>
-        <button className="border border-sand rounded-lg text-clay font-sans text-sm px-6 py-3">
-          Buy
-        </button>
+        {product.source_url && (
+          <a
+            href={product.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border border-sand rounded-lg text-clay font-sans text-sm px-6 py-3 text-center"
+          >
+            Buy
+          </a>
+        )}
       </div>
 
       {/* Reasoning sections */}
