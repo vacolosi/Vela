@@ -22,7 +22,7 @@ interface ScanResult {
   confirmed: boolean;
 }
 
-type Phase = "camera" | "processing" | "results";
+type Phase = "camera" | "processing" | "results" | "manual-search";
 
 export default function ScanPage() {
   const router = useRouter();
@@ -41,7 +41,8 @@ export default function ScanPage() {
   // Manual search state
   const [searchQuery, setSearchQuery] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const { data: searchResults } = useProductSearch(searchQuery);
+  const [manualSearchQuery, setManualSearchQuery] = useState("");
+  const { data: searchResults } = useProductSearch(editingIndex !== null ? searchQuery : manualSearchQuery);
 
   const addToCabinet = useAddToCabinet();
 
@@ -140,6 +141,20 @@ export default function ScanPage() {
     setSearchQuery("");
   };
 
+  const addManualProduct = (product: ScanResult["matched_product"]) => {
+    if (!product) return;
+    setResults((prev) => [
+      ...prev,
+      {
+        detected_name: `${product.brand} ${product.product_name}`,
+        matched_product: product,
+        confidence: "high",
+        confirmed: true,
+      },
+    ]);
+    setManualSearchQuery("");
+  };
+
   const requestProduct = async (detectedName: string) => {
     if (!user) return;
     const supabase = createClient();
@@ -194,12 +209,9 @@ export default function ScanPage() {
           <X size={22} />
         </button>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-6">
-          <p className="font-sans text-[10px] uppercase tracking-[0.18em] text-stone mb-4">
-            Take a photo of your products
-          </p>
-
-          <div className="relative w-64 h-64 mb-6 rounded-lg overflow-hidden bg-espresso">
+        <div className="flex-1 flex flex-col relative">
+          {/* Viewfinder fills available space */}
+          <div className="flex-1 relative overflow-hidden bg-espresso">
             <video
               ref={videoRef}
               autoPlay
@@ -208,44 +220,51 @@ export default function ScanPage() {
               className="w-full h-full object-cover"
             />
             {!cameraActive && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <p className="text-stone text-[10px] font-sans uppercase tracking-[0.18em]">
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
+                <p className="text-stone text-[10px] font-sans uppercase tracking-[0.18em] mb-4">
                   Tap to open camera
                 </p>
+                <button
+                  onClick={startCamera}
+                  className="bg-walnut text-cream rounded-full px-6 py-3 font-sans text-sm"
+                >
+                  Open Camera
+                </button>
               </div>
             )}
             {/* Corner decorations */}
-            <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-cream/50 rounded-tl-sm" />
-            <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-cream/50 rounded-tr-sm" />
-            <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-cream/50 rounded-bl-sm" />
-            <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-cream/50 rounded-br-sm" />
+            <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-cream/50 rounded-tl-sm" />
+            <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-cream/50 rounded-tr-sm" />
+            <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-cream/50 rounded-bl-sm" />
+            <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-cream/50 rounded-br-sm" />
           </div>
 
-          {error && (
-            <p className="text-risk text-xs text-center mb-4">{error}</p>
-          )}
+          {/* Controls below viewfinder */}
+          <div className="px-6 py-5 flex flex-col items-center">
+            {error && (
+              <p className="text-risk text-xs text-center mb-3">{error}</p>
+            )}
 
-          <div className="flex gap-4">
-            {!cameraActive ? (
-              <button
-                onClick={startCamera}
-                className="bg-walnut text-cream rounded-full px-6 py-3 font-sans text-sm"
-              >
-                Open Camera
-              </button>
-            ) : (
+            {cameraActive && (
               <button
                 onClick={captureAndRecognize}
-                className="bg-cream text-ink rounded-full p-4"
+                className="bg-cream text-ink rounded-full p-4 mb-3"
               >
                 <Camera size={24} />
               </button>
             )}
-          </div>
 
-          <p className="text-clay text-[10px] text-center mt-4 max-w-xs">
-            Point your camera at one or more products, then tap the capture button.
-          </p>
+            <p className="text-clay text-[10px] text-center max-w-xs">
+              Point your camera at one or more products, then tap the capture button.
+            </p>
+
+            <button
+              onClick={() => setPhase("manual-search")}
+              className="mt-3 font-sans text-[11px] text-vela-blue"
+            >
+              Or search by name instead
+            </button>
+          </div>
         </div>
 
         <canvas ref={canvasRef} className="hidden" />
@@ -260,6 +279,68 @@ export default function ScanPage() {
         <Loader2 size={32} className="text-cream animate-spin mb-4" />
         <p className="text-cream font-sans text-sm">Identifying products...</p>
         <p className="text-stone text-xs mt-2">This may take a few seconds</p>
+      </div>
+    );
+  }
+
+  // ── Manual search phase ──
+  if (phase === "manual-search") {
+    return (
+      <div className="bg-ink min-h-[calc(100vh-60px)] flex flex-col">
+        <div className="px-5 pt-6 pb-4 flex items-center justify-between">
+          <button
+            onClick={() => {
+              if (results.length > 0) {
+                setPhase("results");
+              } else {
+                setPhase("camera");
+              }
+              setManualSearchQuery("");
+            }}
+            className="text-stone"
+          >
+            <X size={22} />
+          </button>
+          <p className="font-sans text-[10px] uppercase tracking-[0.18em] text-stone">
+            Search Products
+          </p>
+          <div className="w-[22px]" />
+        </div>
+
+        <div className="px-5">
+          <div className="relative mb-4">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-clay" />
+            <input
+              type="text"
+              value={manualSearchQuery}
+              onChange={(e) => setManualSearchQuery(e.target.value)}
+              placeholder="Search product name or brand..."
+              autoFocus
+              className="w-full bg-espresso rounded-lg py-3 pl-10 pr-4 text-cream text-sm placeholder:text-clay focus:outline-none focus:ring-1 focus:ring-walnut"
+            />
+          </div>
+
+          {manualSearchQuery.length >= 2 && searchResults && searchResults.length === 0 && (
+            <p className="text-stone text-xs text-center py-4">No products found</p>
+          )}
+
+          {searchResults?.map((p) => (
+            <button
+              key={p.product_id}
+              onClick={() => {
+                addManualProduct(p as ScanResult["matched_product"]);
+                setPhase("results");
+              }}
+              className="w-full text-left px-3 py-3 border-b border-espresso hover:bg-espresso/50 transition-colors"
+            >
+              <p className="text-stone text-[9px] uppercase tracking-[0.15em]">{p.brand}</p>
+              <p className="text-cream text-sm">{p.product_name}</p>
+              {p.price != null && (
+                <p className="text-clay text-[10px] mt-0.5">${p.price.toFixed(2)}</p>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
     );
   }
@@ -367,6 +448,16 @@ export default function ScanPage() {
             )}
           </div>
         ))}
+      </div>
+
+      {/* Manual search link */}
+      <div className="px-5 pt-2">
+        <button
+          onClick={() => setPhase("manual-search")}
+          className="w-full text-center font-sans text-[11px] text-vela-blue py-2"
+        >
+          + Search and add manually
+        </button>
       </div>
 
       {/* Bottom action */}
