@@ -373,7 +373,7 @@ export default function ScanPage() {
               onChange={(e) => setManualSearchQuery(e.target.value)}
               placeholder="Search product name or brand..."
               autoFocus
-              className="w-full bg-espresso rounded-lg py-3 pl-10 pr-4 text-cream text-sm placeholder:text-clay focus:outline-none focus:ring-1 focus:ring-walnut"
+              className="w-full bg-espresso rounded-lg py-3 pl-10 pr-4 text-cream text-base placeholder:text-clay focus:outline-none focus:ring-1 focus:ring-walnut"
             />
           </div>
 
@@ -433,7 +433,7 @@ export default function ScanPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Type product name..."
                     autoFocus
-                    className="w-full bg-espresso rounded-lg py-2 pl-8 pr-3 text-cream text-sm placeholder:text-clay focus:outline-none"
+                    className="w-full bg-espresso rounded-lg py-2 pl-8 pr-3 text-cream text-base placeholder:text-clay focus:outline-none"
                   />
                 </div>
                 {searchResults?.map((p) => (

@@ -45,7 +45,7 @@ export default function ExplorePage() {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           placeholder="Search products or brands..."
-          className="w-full bg-cream rounded-lg border border-parchment py-2.5 pl-9 pr-4 font-sans text-xs text-ink placeholder:text-sand focus:outline-none focus:ring-1 focus:ring-stone"
+          className="w-full bg-cream rounded-lg border border-parchment py-2.5 pl-9 pr-4 font-sans text-base text-ink placeholder:text-sand focus:outline-none focus:ring-1 focus:ring-stone"
         />
       </div>
 
