@@ -1,8 +1,15 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createServerClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic();
+
+function getSupabaseAdmin() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function POST(request: NextRequest) {
   const { image } = await request.json();
@@ -57,7 +64,7 @@ If you cannot identify any products, return an empty array: []`,
   }
 
   // Step 2: Match each detected product against the database
-  const supabase = await createClient();
+  const supabase = getSupabaseAdmin();
   const results = [];
 
   for (const detected of detectedProducts) {
