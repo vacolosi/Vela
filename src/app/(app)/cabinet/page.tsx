@@ -98,6 +98,7 @@ export default function CabinetPage() {
           {filtered.map((item) => (
             <CabinetItem
               key={item.id}
+              productId={item.product_id}
               brand={item.product?.brand ?? ""}
               name={item.product?.product_name ?? ""}
               tag={
