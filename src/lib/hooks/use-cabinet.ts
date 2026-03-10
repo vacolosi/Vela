@@ -39,16 +39,19 @@ export function useAddToCabinet() {
     }) => {
       const { data, error } = await supabase
         .from("cabinet_items")
-        .insert({
-          user_id: user!.id,
-          product_id: productId,
-          shade_id: shadeId || null,
-          is_active: false,
-        })
+        .upsert(
+          {
+            user_id: user!.id,
+            product_id: productId,
+            shade_id: shadeId || null,
+            is_active: false,
+          },
+          { onConflict: "user_id,product_id", ignoreDuplicates: true }
+        )
         .select()
         .single();
 
-      if (error) throw error;
+      if (error && error.code !== "PGRST116") throw error;
       return data;
     },
     onSuccess: () => {
