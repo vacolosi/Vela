@@ -25,6 +25,7 @@ export default function PreferencesPage() {
     cruelty_free: false,
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function togglePreference(key: PreferenceKey) {
     setPreferences((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -33,17 +34,18 @@ export default function PreferencesPage() {
   async function handleFinish() {
     if (!user) return;
     setSaving(true);
+    setError(null);
 
     const supabase = createClient();
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from("profiles")
       .update({
         preferences,
       })
       .eq("id", user.id);
 
-    if (error) {
-      console.error("Error updating profile:", error);
+    if (updateError) {
+      setError("Something went wrong. Please try again.");
       setSaving(false);
       return;
     }
@@ -78,6 +80,9 @@ export default function PreferencesPage() {
       </div>
 
       <div className="mt-auto pt-8">
+        {error && (
+          <p className="font-sans text-sm text-risk text-center">{error}</p>
+        )}
         <button
           onClick={handleFinish}
           disabled={saving}

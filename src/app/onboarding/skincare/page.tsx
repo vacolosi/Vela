@@ -30,8 +30,9 @@ export default function SkincarePage() {
   const { user } = useUser();
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [selectedConcerns, setSelectedConcerns] = useState<string[]>([]);
-  const [makupActive, setMakeupActive] = useState(false);
+  const [makeupActive, setMakeupActive] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -68,9 +69,10 @@ export default function SkincarePage() {
   async function handleContinue() {
     if (!user) return;
     setSaving(true);
+    setError(null);
 
     const supabase = createClient();
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from("profiles")
       .update({
         skincare_goals: selectedGoals,
@@ -78,13 +80,13 @@ export default function SkincarePage() {
       })
       .eq("id", user.id);
 
-    if (error) {
-      console.error("Error updating profile:", error);
+    if (updateError) {
+      setError("Something went wrong. Please try again.");
       setSaving(false);
       return;
     }
 
-    if (makupActive) {
+    if (makeupActive) {
       router.push("/onboarding/makeup");
     } else {
       router.push("/onboarding/preferences");
@@ -154,6 +156,9 @@ export default function SkincarePage() {
       </div>
 
       <div className="mt-auto pt-8">
+        {error && (
+          <p className="font-sans text-sm text-risk text-center">{error}</p>
+        )}
         <button
           onClick={handleContinue}
           disabled={saving}

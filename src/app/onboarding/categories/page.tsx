@@ -24,6 +24,7 @@ export default function CategoriesPage() {
     body: "inactive",
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function setCategory(category: string, level: CategoryLevel) {
     setSelections((prev) => ({ ...prev, [category]: level }));
@@ -32,9 +33,10 @@ export default function CategoriesPage() {
   async function handleContinue() {
     if (!user) return;
     setSaving(true);
+    setError(null);
 
     const supabase = createClient();
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from("profiles")
       .update({
         category_skincare: selections.skincare,
@@ -44,8 +46,8 @@ export default function CategoriesPage() {
       })
       .eq("id", user.id);
 
-    if (error) {
-      console.error("Error updating profile:", error);
+    if (updateError) {
+      setError("Something went wrong. Please try again.");
       setSaving(false);
       return;
     }
@@ -107,6 +109,9 @@ export default function CategoriesPage() {
       </div>
 
       <div className="mt-auto pt-8">
+        {error && (
+          <p className="font-sans text-sm text-risk text-center">{error}</p>
+        )}
         <button
           onClick={handleContinue}
           disabled={saving}

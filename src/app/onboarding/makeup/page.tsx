@@ -40,13 +40,15 @@ export default function MakeupPage() {
   const [selectedIdentity, setSelectedIdentity] = useState<string | null>(null);
   const [frequency, setFrequency] = useState<Frequency>("active");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleContinue() {
     if (!user || !selectedIdentity) return;
     setSaving(true);
+    setError(null);
 
     const supabase = createClient();
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from("profiles")
       .update({
         makeup_identity: selectedIdentity,
@@ -54,8 +56,8 @@ export default function MakeupPage() {
       })
       .eq("id", user.id);
 
-    if (error) {
-      console.error("Error updating profile:", error);
+    if (updateError) {
+      setError("Something went wrong. Please try again.");
       setSaving(false);
       return;
     }
@@ -133,6 +135,9 @@ export default function MakeupPage() {
       </div>
 
       <div className="mt-auto pt-8">
+        {error && (
+          <p className="font-sans text-sm text-risk text-center">{error}</p>
+        )}
         <button
           onClick={handleContinue}
           disabled={saving || !selectedIdentity}
