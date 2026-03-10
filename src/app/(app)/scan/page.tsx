@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { X, Camera, Search, Check, Loader2 } from "lucide-react";
+import { X, Camera, Image, Search, Check, Loader2 } from "lucide-react";
 import { useAddToCabinet } from "@/lib/hooks/use-cabinet";
 import { useProductSearch } from "@/lib/hooks/use-products";
 import { createClient } from "@/lib/supabase/client";
@@ -30,6 +30,7 @@ export default function ScanPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [phase, setPhase] = useState<Phase>("camera");
   const [cameraActive, setCameraActive] = useState(false);
@@ -70,23 +71,9 @@ export default function ScanPage() {
     setCameraActive(false);
   }, []);
 
-  const captureAndRecognize = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(video, 0, 0);
-
-    stopCamera();
+  const recognizeImage = useCallback(async (base64: string) => {
     setPhase("processing");
     setError(null);
-
-    const base64 = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
 
     try {
       const res = await fetch("/api/scan/recognize", {
@@ -116,7 +103,41 @@ export default function ScanPage() {
       setError("Failed to process image. Please try again.");
       setPhase("camera");
     }
-  }, [stopCamera]);
+  }, []);
+
+  const captureAndRecognize = useCallback(async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0);
+
+    stopCamera();
+
+    const base64 = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
+    recognizeImage(base64);
+  }, [stopCamera, recognizeImage]);
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.split(",")[1];
+      recognizeImage(base64);
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input so same file can be selected again
+    e.target.value = "";
+  }, [recognizeImage]);
 
   const toggleConfirm = (index: number) => {
     setResults((prev) =>
@@ -200,17 +221,18 @@ export default function ScanPage() {
 
   // ── Camera phase ──
   if (phase === "camera") {
-    return (
-      <div className="bg-ink min-h-[calc(100vh-60px)] flex flex-col relative">
-        <button
-          onClick={() => { stopCamera(); router.back(); }}
-          className="absolute top-4 left-4 text-stone z-10"
-        >
-          <X size={22} />
-        </button>
+    // Live camera mode
+    if (cameraActive) {
+      return (
+        <div className="bg-ink min-h-[calc(100vh-60px)] flex flex-col relative">
+          <button
+            onClick={() => { stopCamera(); }}
+            className="absolute top-4 left-4 text-stone z-20"
+          >
+            <X size={22} />
+          </button>
 
-        <div className="flex-1 flex flex-col relative">
-          {/* Viewfinder fills available space */}
+          {/* Full-screen viewfinder */}
           <div className="flex-1 relative overflow-hidden bg-espresso">
             <video
               ref={videoRef}
@@ -219,52 +241,83 @@ export default function ScanPage() {
               muted
               className="w-full h-full object-cover"
             />
-            {!cameraActive && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
-                <p className="text-stone text-[10px] font-sans uppercase tracking-[0.18em] mb-4">
-                  Tap to open camera
-                </p>
-                <button
-                  onClick={startCamera}
-                  className="bg-walnut text-cream rounded-full px-6 py-3 font-sans text-sm"
-                >
-                  Open Camera
-                </button>
-              </div>
-            )}
             {/* Corner decorations */}
             <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-cream/50 rounded-tl-sm" />
             <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-cream/50 rounded-tr-sm" />
             <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-cream/50 rounded-bl-sm" />
             <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-cream/50 rounded-br-sm" />
-          </div>
 
-          {/* Controls below viewfinder */}
-          <div className="px-6 py-5 flex flex-col items-center">
-            {error && (
-              <p className="text-risk text-xs text-center mb-3">{error}</p>
-            )}
-
-            {cameraActive && (
+            {/* Capture button overlay at bottom */}
+            <div className="absolute bottom-8 left-0 right-0 flex justify-center">
               <button
                 onClick={captureAndRecognize}
-                className="bg-cream text-ink rounded-full p-4 mb-3"
+                className="bg-cream text-ink rounded-full p-5 shadow-lg"
               >
-                <Camera size={24} />
+                <Camera size={28} />
               </button>
-            )}
+            </div>
+          </div>
 
-            <p className="text-clay text-[10px] text-center max-w-xs">
-              Point your camera at one or more products, then tap the capture button.
-            </p>
+          <canvas ref={canvasRef} className="hidden" />
+        </div>
+      );
+    }
+
+    // Choose mode: Take Photo or Upload
+    return (
+      <div className="bg-ink min-h-[calc(100vh-60px)] flex flex-col relative">
+        <button
+          onClick={() => router.back()}
+          className="absolute top-4 left-4 text-stone z-10"
+        >
+          <X size={22} />
+        </button>
+
+        <div className="flex-1 flex flex-col items-center justify-center px-6">
+          <p className="font-sans text-[10px] uppercase tracking-[0.18em] text-stone mb-8">
+            Add products by photo
+          </p>
+
+          {error && (
+            <p className="text-risk text-xs text-center mb-4">{error}</p>
+          )}
+
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <button
+              onClick={startCamera}
+              className="flex items-center justify-center gap-3 bg-cream text-ink rounded-lg py-4 font-sans text-sm"
+            >
+              <Camera size={20} />
+              Take a Photo
+            </button>
 
             <button
-              onClick={() => setPhase("manual-search")}
-              className="mt-3 font-sans text-[11px] text-vela-blue"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center justify-center gap-3 bg-espresso text-cream rounded-lg py-4 font-sans text-sm border border-walnut/30"
             >
-              Or search by name instead
+              <Image size={20} />
+              Upload from Camera Roll
             </button>
           </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+
+          <p className="text-clay text-[10px] text-center mt-6 max-w-xs">
+            Take or upload a photo of one or more products to identify them.
+          </p>
+
+          <button
+            onClick={() => setPhase("manual-search")}
+            className="mt-6 font-sans text-[11px] text-vela-blue"
+          >
+            Or search by name instead
+          </button>
         </div>
 
         <canvas ref={canvasRef} className="hidden" />
