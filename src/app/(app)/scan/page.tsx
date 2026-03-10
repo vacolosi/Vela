@@ -400,9 +400,9 @@ export default function ScanPage() {
 
   // ── Results phase ──
   return (
-    <div className="bg-ink min-h-[calc(100vh-60px)] flex flex-col">
+    <div className="bg-ink h-[calc(100dvh-60px)] flex flex-col">
       {/* Header */}
-      <div className="px-5 pt-6 pb-4 flex items-center justify-between">
+      <div className="px-5 pt-6 pb-4 flex items-center justify-between flex-shrink-0">
         <button onClick={() => { setPhase("camera"); setResults([]); setAdded(false); }} className="text-stone">
           <X size={22} />
         </button>
@@ -412,8 +412,8 @@ export default function ScanPage() {
         <div className="w-[22px]" />
       </div>
 
-      {/* Results list */}
-      <div className="flex-1 overflow-y-auto px-5">
+      {/* Results list — scrollable */}
+      <div className="flex-1 overflow-y-auto px-5 min-h-0">
         {results.map((result, index) => (
           <div key={index} className="border-b border-espresso py-4">
             {editingIndex === index ? (
@@ -503,18 +503,15 @@ export default function ScanPage() {
         ))}
       </div>
 
-      {/* Manual search link */}
-      <div className="px-5 pt-2">
+      {/* Pinned bottom actions */}
+      <div className="flex-shrink-0 px-5 pb-4 pt-2 bg-ink">
         <button
           onClick={() => setPhase("manual-search")}
           className="w-full text-center font-sans text-[11px] text-vela-blue py-2"
         >
           + Search and add manually
         </button>
-      </div>
 
-      {/* Bottom action */}
-      <div className="px-5 pb-6 pt-3">
         {added ? (
           <div className="bg-sage rounded-lg py-3 text-center">
             <p className="text-cream font-sans text-sm">
