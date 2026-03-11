@@ -20,6 +20,7 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addedToCabinet, setAddedToCabinet] = useState(false);
+  const [ingredientsOpen, setIngredientsOpen] = useState(false);
 
   const alignment = useAlignment();
   const addToCabinet = useAddToCabinet();
@@ -213,6 +214,43 @@ export default function ProductPage() {
           </a>
         )}
       </div>
+
+      {/* Description */}
+      {product.description && (
+        <div className="mb-4">
+          <div className="font-sans text-[9px] uppercase tracking-[0.18em] text-stone mb-2">
+            Description
+          </div>
+          <p className="font-sans text-xs text-clay font-light leading-relaxed">
+            {product.description}
+          </p>
+        </div>
+      )}
+
+      {/* Ingredients */}
+      {product.ingredients && product.ingredients.length > 0 && (
+        <div className="mb-6 border-t border-parchment pt-4">
+          <button
+            onClick={() => setIngredientsOpen(!ingredientsOpen)}
+            className="w-full flex items-center justify-between"
+          >
+            <span className="font-sans text-[9px] uppercase tracking-[0.18em] text-stone">
+              Ingredients ({product.ingredients.length})
+            </span>
+            <span
+              className={`text-stone transition-transform ${ingredientsOpen ? "rotate-45" : ""}`}
+              style={{ fontSize: 18, lineHeight: 1 }}
+            >
+              +
+            </span>
+          </button>
+          {ingredientsOpen && (
+            <p className="font-sans text-xs text-clay font-light leading-relaxed mt-3">
+              {product.ingredients.join(", ")}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Reasoning sections */}
       {reasoning && (
