@@ -24,6 +24,11 @@ export default function ProductPage() {
   const alignment = useAlignment();
   const addToCabinet = useAddToCabinet();
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Fetch product and trigger alignment on mount
   useEffect(() => {
     if (!id) return;
