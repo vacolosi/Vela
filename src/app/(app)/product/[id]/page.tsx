@@ -21,6 +21,16 @@ export default function ProductPage() {
   const [error, setError] = useState<string | null>(null);
   const [addedToCabinet, setAddedToCabinet] = useState(false);
   const [ingredientsOpen, setIngredientsOpen] = useState(false);
+  const [shades, setShades] = useState<{
+    shade_id: string;
+    shade_name: string;
+    shade_description: string | null;
+    undertone: string | null;
+    skin_depth_match: string | null;
+    swatch_image_url: string | null;
+    product_image_url: string | null;
+  }[]>([]);
+  const [selectedShade, setSelectedShade] = useState<string | null>(null);
 
   const alignment = useAlignment();
   const addToCabinet = useAddToCabinet();
@@ -60,6 +70,24 @@ export default function ProductPage() {
     fetchProduct();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Fetch shades for this product
+  useEffect(() => {
+    if (!id) return;
+    async function fetchShades() {
+      const { data } = await supabase
+        .from("shades")
+        .select("shade_id, shade_name, shade_description, undertone, skin_depth_match, swatch_image_url, product_image_url")
+        .eq("product_id", id)
+        .order("shade_name");
+      if (data && data.length > 0) {
+        setShades(data);
+      }
+    }
+    fetchShades();
+  }, [id]);
+
+  const activeShade = shades.find((s) => s.shade_id === selectedShade);
 
   function handleAddToCabinet() {
     if (!product) return;
@@ -159,6 +187,63 @@ export default function ProductPage() {
               {badge}
             </span>
           ))}
+        </div>
+      )}
+
+      {/* Shade picker */}
+      {shades.length > 0 && (
+        <div className="mb-5">
+          <div className="font-sans text-[9px] uppercase tracking-[0.18em] text-stone mb-3">
+            {shades.length} Shade{shades.length !== 1 ? "s" : ""}
+          </div>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {shades.map((shade) => (
+              <button
+                key={shade.shade_id}
+                onClick={() => setSelectedShade(
+                  selectedShade === shade.shade_id ? null : shade.shade_id
+                )}
+                className={`w-9 h-9 rounded-full overflow-hidden border-2 transition-all ${
+                  selectedShade === shade.shade_id
+                    ? "border-ink scale-110"
+                    : "border-parchment"
+                }`}
+                title={shade.shade_name}
+              >
+                {shade.swatch_image_url ? (
+                  <img
+                    src={shade.swatch_image_url}
+                    alt={shade.shade_name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-cream flex items-center justify-center">
+                    <span className="text-[7px] text-clay">{shade.shade_name.charAt(0)}</span>
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+          {activeShade && (
+            <div className="bg-cream rounded-lg border border-parchment p-3">
+              <p className="font-sans text-sm text-ink font-medium">{activeShade.shade_name}</p>
+              {activeShade.shade_description && (
+                <p className="font-sans text-xs text-clay font-light mt-0.5">{activeShade.shade_description}</p>
+              )}
+              <div className="flex gap-2 mt-1.5">
+                {activeShade.undertone && (
+                  <span className="font-sans text-[9px] uppercase tracking-[0.06em] px-2 py-0.5 rounded border border-sand text-clay">
+                    {activeShade.undertone}
+                  </span>
+                )}
+                {activeShade.skin_depth_match && (
+                  <span className="font-sans text-[9px] uppercase tracking-[0.06em] px-2 py-0.5 rounded border border-sand text-clay">
+                    {activeShade.skin_depth_match}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
