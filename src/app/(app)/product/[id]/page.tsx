@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAlignment } from "@/lib/hooks/use-alignment";
 import { useAddToCabinet } from "@/lib/hooks/use-cabinet";
@@ -15,6 +15,8 @@ const supabase = createClient();
 export default function ProductPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialShade = searchParams.get("shade");
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,7 +32,7 @@ export default function ProductPage() {
     swatch_image_url: string | null;
     product_image_url: string | null;
   }[]>([]);
-  const [selectedShade, setSelectedShade] = useState<string | null>(null);
+  const [selectedShade, setSelectedShade] = useState<string | null>(initialShade);
 
   const alignment = useAlignment();
   const addToCabinet = useAddToCabinet();

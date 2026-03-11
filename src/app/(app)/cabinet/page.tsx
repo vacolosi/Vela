@@ -101,6 +101,7 @@ export default function CabinetPage() {
             <CabinetItem
               key={item.id}
               productId={item.product_id}
+              shadeId={item.shade_id}
               brand={item.product?.brand ?? ""}
               name={item.product?.product_name ?? ""}
               shadeName={item.shade?.shade_name}

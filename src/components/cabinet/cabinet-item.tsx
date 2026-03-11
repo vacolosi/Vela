@@ -6,6 +6,7 @@ import { ProductDot } from "@/components/product/product-dot";
 
 interface CabinetItemProps {
   productId: string;
+  shadeId?: string | null;
   brand: string;
   name: string;
   tag: string;
@@ -19,6 +20,7 @@ interface CabinetItemProps {
 
 export function CabinetItem({
   productId,
+  shadeId,
   brand,
   name,
   tag,
@@ -39,7 +41,7 @@ export function CabinetItem({
           <Minus size={14} className="text-cream" />
         </button>
       )}
-      <Link href={`/product/${productId}`} className="flex items-center gap-3 flex-1 min-w-0">
+      <Link href={`/product/${productId}${shadeId ? `?shade=${shadeId}` : ""}`} className="flex items-center gap-3 flex-1 min-w-0">
         <ProductDot size={36} imageUrl={imageUrl} />
         <div className="flex-1 min-w-0">
           <div className="font-sans text-[8px] text-stone uppercase tracking-[0.06em]">
