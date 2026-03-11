@@ -123,7 +123,7 @@ export default function ProductPage() {
       {/* Product image area */}
       <div className="flex justify-center mb-5">
         <div className="shadow-sm rounded-md">
-          <ProductDot size={80} />
+          <ProductDot size={80} imageUrl={product.image_url} />
         </div>
       </div>
 

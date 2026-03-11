@@ -8,6 +8,7 @@ import { useFeaturedProducts } from "@/lib/hooks/use-featured-products";
 import { useAddToCabinet } from "@/lib/hooks/use-cabinet";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ProductDot } from "@/components/product/product-dot";
 
 const CATEGORIES = [
   { key: "skincare", label: "Skincare" },
@@ -76,13 +77,16 @@ export default function ExplorePage() {
             >
               <button
                 onClick={() => router.push(`/product/${product.product_id}`)}
-                className="flex-1 text-left min-w-0"
+                className="flex items-center gap-3 flex-1 text-left min-w-0"
               >
-                <p className="font-sans text-[9px] uppercase tracking-[0.15em] text-stone">{product.brand}</p>
-                <p className="text-ink text-sm leading-snug">{product.product_name}</p>
-                {product.price != null && (
-                  <p className="text-clay text-[11px] mt-0.5">${product.price.toFixed(2)}</p>
-                )}
+                <ProductDot size={36} imageUrl={product.image_url} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-sans text-[9px] uppercase tracking-[0.15em] text-stone">{product.brand}</p>
+                  <p className="text-ink text-sm leading-snug">{product.product_name}</p>
+                  {product.price != null && (
+                    <p className="text-clay text-[11px] mt-0.5">${product.price.toFixed(2)}</p>
+                  )}
+                </div>
               </button>
               <button
                 onClick={() => handleAdd(product.product_id)}
@@ -135,15 +139,18 @@ export default function ExplorePage() {
                 >
                   <button
                     onClick={() => router.push(`/product/${product.product_id}`)}
-                    className="flex-1 text-left min-w-0"
+                    className="flex items-center gap-3 flex-1 text-left min-w-0"
                   >
-                    <p className="font-sans text-[9px] uppercase tracking-[0.15em] text-stone">{product.brand}</p>
-                    <p className="text-ink text-sm leading-snug">{product.product_name}</p>
-                    <div className="flex gap-2 mt-0.5">
-                      <span className="font-sans text-[10px] text-stone capitalize">{product.subcategory}</span>
-                      {product.price != null && (
-                        <span className="text-clay text-[10px]">${product.price.toFixed(2)}</span>
-                      )}
+                    <ProductDot size={36} imageUrl={product.image_url} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-sans text-[9px] uppercase tracking-[0.15em] text-stone">{product.brand}</p>
+                      <p className="text-ink text-sm leading-snug">{product.product_name}</p>
+                      <div className="flex gap-2 mt-0.5">
+                        <span className="font-sans text-[10px] text-stone capitalize">{product.subcategory}</span>
+                        {product.price != null && (
+                          <span className="text-clay text-[10px]">${product.price.toFixed(2)}</span>
+                        )}
+                      </div>
                     </div>
                   </button>
                   <button

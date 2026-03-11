@@ -10,6 +10,7 @@ interface Product {
   subcategory: string;
   price: number | null;
   primary_functions: string[];
+  image_url: string | null;
 }
 
 export function useProductSearch(query: string) {

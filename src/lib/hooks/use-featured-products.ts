@@ -9,6 +9,7 @@ interface Product {
   category: string;
   subcategory: string;
   price: number | null;
+  image_url: string | null;
 }
 
 export function useFeaturedProducts(category?: string) {

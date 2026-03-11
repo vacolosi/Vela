@@ -11,6 +11,7 @@ interface CabinetItemProps {
   tag: string;
   isActive: boolean;
   editMode?: boolean;
+  imageUrl?: string | null;
   onToggleLineup: () => void;
   onRemove?: () => void;
 }
@@ -22,6 +23,7 @@ export function CabinetItem({
   tag,
   isActive,
   editMode,
+  imageUrl,
   onToggleLineup,
   onRemove,
 }: CabinetItemProps) {
@@ -36,7 +38,7 @@ export function CabinetItem({
         </button>
       )}
       <Link href={`/product/${productId}`} className="flex items-center gap-3 flex-1 min-w-0">
-        <ProductDot size={36} />
+        <ProductDot size={36} imageUrl={imageUrl} />
         <div className="flex-1 min-w-0">
           <div className="font-sans text-[8px] text-stone uppercase tracking-[0.06em]">
             {brand}

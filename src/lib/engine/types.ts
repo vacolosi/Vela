@@ -21,6 +21,7 @@ export interface Product {
   formula_notes: string | null;
   price: number | null;
   source_url: string | null;
+  image_url: string | null;
 }
 
 export interface UserProfile {

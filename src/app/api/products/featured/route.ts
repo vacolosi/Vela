@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("products")
-    .select("product_id, brand, product_name, category, subcategory, price")
+    .select("product_id, brand, product_name, category, subcategory, price, image_url")
     .order("created_at", { ascending: false })
     .limit(10);
 
