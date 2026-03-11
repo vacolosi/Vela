@@ -15,7 +15,7 @@ export function useCabinet() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cabinet_items")
-        .select(`*, product:products(*)`)
+        .select(`*, product:products(*), shade:shades(*)`)
         .eq("user_id", user!.id)
         .order("added_at", { ascending: false });
 

@@ -103,7 +103,8 @@ export default function CabinetPage() {
               productId={item.product_id}
               brand={item.product?.brand ?? ""}
               name={item.product?.product_name ?? ""}
-              imageUrl={item.product?.image_url}
+              shadeName={item.shade?.shade_name}
+              imageUrl={item.shade?.product_image_url || item.product?.image_url}
               tag={
                 item.product
                   ? getTag(item.product)

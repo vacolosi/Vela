@@ -90,7 +90,7 @@ export default function ProductPage() {
   function handleAddToCabinet() {
     if (!product) return;
     addToCabinet.mutate(
-      { productId: product.product_id },
+      { productId: product.product_id, shadeId: selectedShade || undefined },
       {
         onSuccess: () => setAddedToCabinet(true),
       }

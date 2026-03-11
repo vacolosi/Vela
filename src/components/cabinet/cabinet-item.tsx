@@ -12,6 +12,7 @@ interface CabinetItemProps {
   isActive: boolean;
   editMode?: boolean;
   imageUrl?: string | null;
+  shadeName?: string | null;
   onToggleLineup: () => void;
   onRemove?: () => void;
 }
@@ -24,6 +25,7 @@ export function CabinetItem({
   isActive,
   editMode,
   imageUrl,
+  shadeName,
   onToggleLineup,
   onRemove,
 }: CabinetItemProps) {
@@ -46,6 +48,11 @@ export function CabinetItem({
           <div className="font-sans text-xs text-ink leading-snug truncate">
             {name}
           </div>
+          {shadeName && (
+            <div className="font-sans text-[9px] text-clay truncate">
+              {shadeName}
+            </div>
+          )}
         </div>
       </Link>
       {!editMode && (
