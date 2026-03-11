@@ -87,8 +87,6 @@ export default function ProductPage() {
     fetchShades();
   }, [id]);
 
-  const activeShade = shades.find((s) => s.shade_id === selectedShade);
-
   function handleAddToCabinet() {
     if (!product) return;
     addToCabinet.mutate(
@@ -134,6 +132,22 @@ export default function ProductPage() {
 
   const result = alignment.data;
   const reasoning = result?.reasoning;
+  const activeShadeData = shades.find((s) => s.shade_id === selectedShade);
+  const displayImage = activeShadeData?.product_image_url || product.image_url;
+
+  // Build buy URL — append shade SKU if selected
+  function getBuyUrl() {
+    if (!product?.source_url) return null;
+    const shadeImageUrl = activeShadeData?.product_image_url;
+    if (!shadeImageUrl) return product.source_url;
+    // Extract SKU from product_image_url like https://media.ulta.com/i/ulta/2627709?w=500
+    const skuMatch = shadeImageUrl.match(/\/ulta\/(\d+)/);
+    if (skuMatch) {
+      const baseUrl = product.source_url.replace(/[?&]sku=\d+/, "");
+      return `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}sku=${skuMatch[1]}`;
+    }
+    return product.source_url;
+  }
 
   // ── Build alignment summary ─────────────────────────────────────────
   function buildSummary() {
@@ -157,7 +171,7 @@ export default function ProductPage() {
       {/* Product image area */}
       <div className="flex justify-center mb-5">
         <div className="shadow-sm rounded-lg">
-          <ProductDot size={180} imageUrl={product.image_url} />
+          <ProductDot size={180} imageUrl={displayImage} />
         </div>
       </div>
 
@@ -224,21 +238,21 @@ export default function ProductPage() {
               </button>
             ))}
           </div>
-          {activeShade && (
+          {activeShadeData && (
             <div className="bg-cream rounded-lg border border-parchment p-3">
-              <p className="font-sans text-sm text-ink font-medium">{activeShade.shade_name}</p>
-              {activeShade.shade_description && (
-                <p className="font-sans text-xs text-clay font-light mt-0.5">{activeShade.shade_description}</p>
+              <p className="font-sans text-sm text-ink font-medium">{activeShadeData.shade_name}</p>
+              {activeShadeData.shade_description && (
+                <p className="font-sans text-xs text-clay font-light mt-0.5">{activeShadeData.shade_description}</p>
               )}
               <div className="flex gap-2 mt-1.5">
-                {activeShade.undertone && (
+                {activeShadeData.undertone && (
                   <span className="font-sans text-[9px] uppercase tracking-[0.06em] px-2 py-0.5 rounded border border-sand text-clay">
-                    {activeShade.undertone}
+                    {activeShadeData.undertone}
                   </span>
                 )}
-                {activeShade.skin_depth_match && (
+                {activeShadeData.skin_depth_match && (
                   <span className="font-sans text-[9px] uppercase tracking-[0.06em] px-2 py-0.5 rounded border border-sand text-clay">
-                    {activeShade.skin_depth_match}
+                    {activeShadeData.skin_depth_match}
                   </span>
                 )}
               </div>
@@ -302,9 +316,9 @@ export default function ProductPage() {
               ? "Adding..."
               : "Add to Cabinet"}
         </button>
-        {product.source_url && (
+        {getBuyUrl() && (
           <a
-            href={product.source_url}
+            href={getBuyUrl()!}
             target="_blank"
             rel="noopener noreferrer"
             className="border border-sand rounded-lg text-clay font-sans text-sm px-6 py-3 text-center"
