@@ -143,8 +143,22 @@ export default function ProductPage() {
 
       {/* Price */}
       {product.price !== null && (
-        <div className="font-sans text-sm text-walnut font-light mb-5">
+        <div className="font-sans text-sm text-walnut font-light mb-3">
           ${product.price.toFixed(2)}
+        </div>
+      )}
+
+      {/* Badges */}
+      {product.badges && product.badges.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-5">
+          {product.badges.map((badge) => (
+            <span
+              key={badge}
+              className="font-sans text-[9px] uppercase tracking-[0.08em] px-2.5 py-1 rounded-full bg-sage/15 text-sage border border-sage/20"
+            >
+              {badge}
+            </span>
+          ))}
         </div>
       )}
 

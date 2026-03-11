@@ -24,6 +24,7 @@ export interface Product {
   image_url: string | null;
   description: string | null;
   ingredients: string[] | null;
+  badges: string[] | null;
 }
 
 export interface UserProfile {
