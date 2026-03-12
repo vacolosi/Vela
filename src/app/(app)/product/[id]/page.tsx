@@ -227,6 +227,7 @@ export default function ProductPage() {
                 title={shade.shade_name}
               >
                 {shade.swatch_image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={shade.swatch_image_url}
                     alt={shade.shade_name}

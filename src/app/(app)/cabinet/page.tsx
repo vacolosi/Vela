@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useCabinet, useToggleLineup, useRemoveFromCabinet } from "@/lib/hooks/use-cabinet";
 import { CabinetItem } from "@/components/cabinet/cabinet-item";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";

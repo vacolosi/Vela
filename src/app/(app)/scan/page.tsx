@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { X, Camera, Image, Search, Check, Loader2 } from "lucide-react";
+import { X, Camera, Image as ImageIcon, Search, Check, Loader2 } from "lucide-react";
 import { useAddToCabinet } from "@/lib/hooks/use-cabinet";
 import { useProductSearch } from "@/lib/hooks/use-products";
 import { createClient } from "@/lib/supabase/client";
@@ -299,7 +299,7 @@ export default function ScanPage() {
               onClick={() => fileInputRef.current?.click()}
               className="flex items-center justify-center gap-3 bg-espresso text-cream rounded-lg py-4 font-sans text-sm border border-walnut/30"
             >
-              <Image size={20} />
+              <ImageIcon size={20} />
               Upload from Camera Roll
             </button>
           </div>
