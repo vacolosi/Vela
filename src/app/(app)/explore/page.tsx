@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Plus, Check, ChevronLeft } from "lucide-react";
+import { Search, Plus, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useProductSearch } from "@/lib/hooks/use-products";
 import { useFeaturedProducts, useBrands } from "@/lib/hooks/use-featured-products";
 import { useAddToCabinet } from "@/lib/hooks/use-cabinet";
@@ -63,8 +63,11 @@ function ProductRow({
   );
 }
 
+type SearchMode = "products" | "brands";
+
 export default function ExplorePage() {
   const router = useRouter();
+  const [searchMode, setSearchMode] = useState<SearchMode>("products");
   const [inputValue, setInputValue] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
@@ -78,27 +81,28 @@ export default function ExplorePage() {
     return () => clearTimeout(timer);
   }, [inputValue]);
 
-  const { data: searchResults, isLoading: searchLoading } = useProductSearch(debouncedQuery);
+  const isSearching = searchMode === "products" && debouncedQuery.length >= 2;
+  const { data: searchResults, isLoading: searchLoading } = useProductSearch(
+    isSearching ? debouncedQuery : ""
+  );
   const { data: featured, isLoading: featuredLoading } = useFeaturedProducts(
     selectedCategory,
     selectedBrand ?? undefined
   );
-  // Fetch all brand products (no category filter) to know which categories exist
   const { data: allBrandProducts } = useFeaturedProducts(
     undefined,
     selectedBrand ?? undefined
   );
   const { data: brands, isLoading: brandsLoading } = useBrands();
 
-  // Only show category tabs that the selected brand actually has products in
   const brandCategories = selectedBrand && allBrandProducts
     ? CATEGORIES.filter((cat) =>
         allBrandProducts.some((p) => p.category?.toLowerCase() === cat.key)
       )
     : CATEGORIES;
+
   const addToCabinet = useAddToCabinet();
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
-  const isSearching = debouncedQuery.length >= 2;
 
   const handleAdd = (productId: string) => {
     addToCabinet.mutate(
@@ -111,16 +115,23 @@ export default function ExplorePage() {
     );
   };
 
-  // Filter brands by search
+  // Filter brands by search input
   const filteredBrands = brands?.filter((b) =>
     b.name.toLowerCase().includes(brandSearch.toLowerCase())
   );
+
+  // Switch between product/brand tabs
+  const handleModeSwitch = (mode: SearchMode) => {
+    setSearchMode(mode);
+    setInputValue("");
+    setDebouncedQuery("");
+    setBrandSearch("");
+  };
 
   // ── Brand detail view ─────────────────────────────────────────────
   if (selectedBrand) {
     return (
       <div className="min-h-[calc(100vh-60px)] bg-white px-5 pb-8">
-        {/* Brand header */}
         <div className="flex items-center gap-3 pt-6 pb-4">
           <button
             onClick={() => {
@@ -134,7 +145,6 @@ export default function ExplorePage() {
           <h1 className="font-serif text-[26px] italic text-ink">{selectedBrand}</h1>
         </div>
 
-        {/* Category tabs — only show categories this brand has products in */}
         {brandCategories.length > 1 && (
           <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-hide">
             <button
@@ -159,7 +169,6 @@ export default function ExplorePage() {
           </div>
         )}
 
-        {/* Brand products */}
         {featuredLoading ? (
           <LoadingSpinner className="py-8" />
         ) : featured && featured.length === 0 ? (
@@ -191,107 +200,51 @@ export default function ExplorePage() {
         <h1 className="font-serif text-[26px] italic text-ink">Explore</h1>
       </div>
 
-      <div className="relative mb-5">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-sand" />
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder="Search products or brands..."
-          className="w-full bg-cream rounded-lg border border-parchment py-2.5 pl-9 pr-4 font-sans text-base text-ink placeholder:text-sand focus:outline-none focus:ring-1 focus:ring-stone"
-        />
+      {/* Products / Brands toggle */}
+      <div className="flex mb-4 border-b border-parchment">
+        <button
+          onClick={() => handleModeSwitch("products")}
+          className={`flex-1 pb-2.5 font-sans text-[11px] uppercase tracking-[0.1em] text-center transition-colors ${
+            searchMode === "products"
+              ? "text-ink font-medium border-b-2 border-ink"
+              : "text-stone font-light"
+          }`}
+        >
+          Products
+        </button>
+        <button
+          onClick={() => handleModeSwitch("brands")}
+          className={`flex-1 pb-2.5 font-sans text-[11px] uppercase tracking-[0.1em] text-center transition-colors ${
+            searchMode === "brands"
+              ? "text-ink font-medium border-b-2 border-ink"
+              : "text-stone font-light"
+          }`}
+        >
+          Brands
+        </button>
       </div>
 
-      {isSearching ? (
-        <div className="flex-1 overflow-y-auto">
-          {searchLoading && <LoadingSpinner className="py-8" />}
-          {!searchLoading && searchResults && searchResults.length === 0 && (
-            <EmptyState title="No products found" description="Try a different search term." />
-          )}
-          {searchResults?.map((product) => (
-            <ProductRow
-              key={product.product_id}
-              product={product}
-              onNavigate={() => router.push(`/product/${product.product_id}`)}
-              onAdd={() => handleAdd(product.product_id)}
-              added={addedIds.has(product.product_id)}
-            />
-          ))}
-        </div>
-      ) : (
+      {/* ── Products mode ──────────────────────────────────────────── */}
+      {searchMode === "products" && (
         <>
-          {/* Browse by Brand */}
-          <div className="mb-6">
-            <div className="font-sans text-[9px] uppercase tracking-[0.18em] text-stone mb-3">
-              Browse by Brand
-            </div>
-
-            {/* Brand search */}
+          <div className="relative mb-5">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-sand" />
             <input
               type="text"
-              value={brandSearch}
-              onChange={(e) => setBrandSearch(e.target.value)}
-              placeholder="Filter brands..."
-              className="w-full bg-cream rounded-lg border border-parchment py-2 px-3 font-sans text-base text-ink placeholder:text-sand focus:outline-none focus:ring-1 focus:ring-stone mb-3"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Search products..."
+              className="w-full bg-cream rounded-lg border border-parchment py-2.5 pl-9 pr-4 font-sans text-base text-ink placeholder:text-sand focus:outline-none focus:ring-1 focus:ring-stone"
             />
-
-            {brandsLoading ? (
-              <LoadingSpinner className="py-4" />
-            ) : (
-              <div className="flex flex-wrap gap-1.5 max-h-[200px] overflow-y-auto">
-                {filteredBrands?.slice(0, 60).map((brand) => (
-                  <button
-                    key={brand.name}
-                    onClick={() => {
-                      setSelectedBrand(brand.name);
-                      setSelectedCategory(undefined);
-                    }}
-                    className="rounded-full px-3 py-1.5 font-sans text-[11px] whitespace-nowrap border border-sand text-clay hover:bg-ink hover:text-cream hover:border-ink transition-colors"
-                  >
-                    {brand.name}
-                    <span className="ml-1 text-[9px] text-stone">{brand.count}</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* Divider */}
-          <div className="border-t border-parchment mb-5" />
-
-          {/* Category browsing */}
-          <div className="font-sans text-[9px] uppercase tracking-[0.18em] text-stone mb-3">
-            Browse by Category
-          </div>
-          <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-hide">
-            <button
-              onClick={() => setSelectedCategory(undefined)}
-              className={`rounded-full px-3 py-1.5 font-sans text-[11px] whitespace-nowrap transition-colors ${
-                !selectedCategory ? "bg-ink text-cream" : "border border-sand text-clay"
-              }`}
-            >
-              All
-            </button>
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.key}
-                onClick={() => setSelectedCategory(cat.key)}
-                className={`rounded-full px-3 py-1.5 font-sans text-[11px] whitespace-nowrap transition-colors ${
-                  selectedCategory === cat.key ? "bg-ink text-cream" : "border border-sand text-clay"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          {featuredLoading ? (
-            <LoadingSpinner className="py-8" />
-          ) : featured && featured.length === 0 ? (
-            <EmptyState title="No products yet" description="Products are being added. Check back soon!" />
-          ) : (
-            <div className="flex flex-col gap-1">
-              {featured?.map((product) => (
+          {isSearching ? (
+            <div className="flex-1 overflow-y-auto">
+              {searchLoading && <LoadingSpinner className="py-8" />}
+              {!searchLoading && searchResults && searchResults.length === 0 && (
+                <EmptyState title="No products found" description="Try a different search term." />
+              )}
+              {searchResults?.map((product) => (
                 <ProductRow
                   key={product.product_id}
                   product={product}
@@ -299,6 +252,91 @@ export default function ExplorePage() {
                   onAdd={() => handleAdd(product.product_id)}
                   added={addedIds.has(product.product_id)}
                 />
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-hide">
+                <button
+                  onClick={() => setSelectedCategory(undefined)}
+                  className={`rounded-full px-3 py-1.5 font-sans text-[11px] whitespace-nowrap transition-colors ${
+                    !selectedCategory ? "bg-ink text-cream" : "border border-sand text-clay"
+                  }`}
+                >
+                  All
+                </button>
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.key}
+                    onClick={() => setSelectedCategory(cat.key)}
+                    className={`rounded-full px-3 py-1.5 font-sans text-[11px] whitespace-nowrap transition-colors ${
+                      selectedCategory === cat.key ? "bg-ink text-cream" : "border border-sand text-clay"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+
+              {featuredLoading ? (
+                <LoadingSpinner className="py-8" />
+              ) : featured && featured.length === 0 ? (
+                <EmptyState title="No products yet" description="Products are being added. Check back soon!" />
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {featured?.map((product) => (
+                    <ProductRow
+                      key={product.product_id}
+                      product={product}
+                      onNavigate={() => router.push(`/product/${product.product_id}`)}
+                      onAdd={() => handleAdd(product.product_id)}
+                      added={addedIds.has(product.product_id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* ── Brands mode ────────────────────────────────────────────── */}
+      {searchMode === "brands" && (
+        <>
+          <div className="relative mb-4">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-sand" />
+            <input
+              type="text"
+              value={brandSearch}
+              onChange={(e) => setBrandSearch(e.target.value)}
+              placeholder="Search brands..."
+              className="w-full bg-cream rounded-lg border border-parchment py-2.5 pl-9 pr-4 font-sans text-base text-ink placeholder:text-sand focus:outline-none focus:ring-1 focus:ring-stone"
+            />
+          </div>
+
+          {brandsLoading ? (
+            <LoadingSpinner className="py-8" />
+          ) : filteredBrands && filteredBrands.length === 0 ? (
+            <EmptyState title="No brands found" description="Try a different search term." />
+          ) : (
+            <div className="flex-1 overflow-y-auto">
+              {filteredBrands?.map((brand) => (
+                <button
+                  key={brand.name}
+                  onClick={() => {
+                    setSelectedBrand(brand.name);
+                    setSelectedCategory(undefined);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-3.5 border-b border-parchment text-left"
+                >
+                  <div>
+                    <p className="font-sans text-sm text-ink">{brand.name}</p>
+                    <p className="font-sans text-[10px] text-stone mt-0.5">
+                      {brand.count} product{brand.count !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <ChevronRight size={16} className="text-sand flex-shrink-0" />
+                </button>
               ))}
             </div>
           )}
