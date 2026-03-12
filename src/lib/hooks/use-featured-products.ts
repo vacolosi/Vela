@@ -12,15 +12,30 @@ interface Product {
   image_url: string | null;
 }
 
-export function useFeaturedProducts(category?: string) {
+export function useFeaturedProducts(category?: string, brand?: string) {
   return useQuery({
-    queryKey: ["products", "featured", category ?? "all"],
+    queryKey: ["products", "featured", category ?? "all", brand ?? "all"],
     queryFn: async () => {
-      const params = category ? `?category=${category}` : "";
-      const res = await fetch(`/api/products/featured${params}`);
+      const params = new URLSearchParams();
+      if (category) params.set("category", category);
+      if (brand) params.set("brand", brand);
+      const qs = params.toString();
+      const res = await fetch(`/api/products/featured${qs ? `?${qs}` : ""}`);
       const data = await res.json();
       return data.products as Product[];
     },
     staleTime: 10 * 60 * 1000,
+  });
+}
+
+export function useBrands() {
+  return useQuery({
+    queryKey: ["products", "brands"],
+    queryFn: async () => {
+      const res = await fetch("/api/products/brands");
+      const data = await res.json();
+      return data.brands as { name: string; count: number }[];
+    },
+    staleTime: 30 * 60 * 1000,
   });
 }
