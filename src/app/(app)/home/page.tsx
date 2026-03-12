@@ -4,6 +4,7 @@ import { useCabinet } from "@/lib/hooks/use-cabinet";
 import { useProfile } from "@/lib/hooks/use-profile";
 import { ProductDot } from "@/components/product/product-dot";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { INFLUENCERS } from "@/lib/data/influencers";
 import Link from "next/link";
 
 const CATEGORIES = [
@@ -213,6 +214,55 @@ export default function HomePage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Cabinets to Explore */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-stone">
+            Cabinets to Explore
+          </p>
+          <Link href="/explore" className="font-sans text-[11px] text-vela-blue">
+            See all &rarr;
+          </Link>
+        </div>
+        <div className="flex flex-col gap-2">
+          {INFLUENCERS.map((inf) => (
+            <Link
+              key={inf.handle}
+              href={`/cabinet/${inf.handle}`}
+              className="block p-3.5 bg-cream rounded-[10px] border border-parchment"
+            >
+              <div className="flex items-center gap-2.5 mb-2">
+                <div className="w-9 h-9 rounded-full bg-clay flex items-center justify-center flex-shrink-0">
+                  <span className="font-serif text-base text-cream italic">
+                    {inf.name[0]}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-sans text-[13px] text-ink">{inf.name}</p>
+                  <p className="font-sans text-[10px] text-stone font-light">
+                    @{inf.handle}
+                  </p>
+                </div>
+                <div className="px-2.5 py-1 border border-sand rounded">
+                  <span className="font-sans text-[10px] text-clay">View</span>
+                </div>
+              </div>
+              <p className="font-sans text-[10px] text-clay font-light mb-1.5">
+                {inf.bio}
+              </p>
+              <div className="flex gap-3">
+                <span className="font-mono text-[8px] text-stone">
+                  {inf.products} products
+                </span>
+                <span className="font-mono text-[8px] text-sage">
+                  {inf.saves} saves
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );
