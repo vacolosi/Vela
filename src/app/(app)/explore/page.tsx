@@ -83,7 +83,19 @@ export default function ExplorePage() {
     selectedCategory,
     selectedBrand ?? undefined
   );
+  // Fetch all brand products (no category filter) to know which categories exist
+  const { data: allBrandProducts } = useFeaturedProducts(
+    undefined,
+    selectedBrand ?? undefined
+  );
   const { data: brands, isLoading: brandsLoading } = useBrands();
+
+  // Only show category tabs that the selected brand actually has products in
+  const brandCategories = selectedBrand && allBrandProducts
+    ? CATEGORIES.filter((cat) =>
+        allBrandProducts.some((p) => p.category?.toLowerCase() === cat.key)
+      )
+    : CATEGORIES;
   const addToCabinet = useAddToCabinet();
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const isSearching = debouncedQuery.length >= 2;
@@ -122,28 +134,30 @@ export default function ExplorePage() {
           <h1 className="font-serif text-[26px] italic text-ink">{selectedBrand}</h1>
         </div>
 
-        {/* Category tabs */}
-        <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-hide">
-          <button
-            onClick={() => setSelectedCategory(undefined)}
-            className={`rounded-full px-3 py-1.5 font-sans text-[11px] whitespace-nowrap transition-colors ${
-              !selectedCategory ? "bg-ink text-cream" : "border border-sand text-clay"
-            }`}
-          >
-            All
-          </button>
-          {CATEGORIES.map((cat) => (
+        {/* Category tabs — only show categories this brand has products in */}
+        {brandCategories.length > 1 && (
+          <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-hide">
             <button
-              key={cat.key}
-              onClick={() => setSelectedCategory(cat.key)}
+              onClick={() => setSelectedCategory(undefined)}
               className={`rounded-full px-3 py-1.5 font-sans text-[11px] whitespace-nowrap transition-colors ${
-                selectedCategory === cat.key ? "bg-ink text-cream" : "border border-sand text-clay"
+                !selectedCategory ? "bg-ink text-cream" : "border border-sand text-clay"
               }`}
             >
-              {cat.label}
+              All
             </button>
-          ))}
-        </div>
+            {brandCategories.map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => setSelectedCategory(cat.key)}
+                className={`rounded-full px-3 py-1.5 font-sans text-[11px] whitespace-nowrap transition-colors ${
+                  selectedCategory === cat.key ? "bg-ink text-cream" : "border border-sand text-clay"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Brand products */}
         {featuredLoading ? (
