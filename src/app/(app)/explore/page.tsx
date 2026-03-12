@@ -73,6 +73,7 @@ export default function ExplorePage() {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [brandSearch, setBrandSearch] = useState("");
+  const [brandProductSearch, setBrandProductSearch] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -128,6 +129,14 @@ export default function ExplorePage() {
     setBrandSearch("");
   };
 
+  // Filter brand products by search
+  const brandProductsFiltered = featured?.filter((p) => {
+    if (!brandProductSearch.trim()) return true;
+    const words = brandProductSearch.toLowerCase().split(/[\s\-]+/).filter((w) => w.length >= 2);
+    const combined = `${p.brand} ${p.product_name}`.toLowerCase().replace(/[-]/g, " ");
+    return words.every((word) => combined.includes(word));
+  });
+
   // ── Brand detail view ─────────────────────────────────────────────
   if (selectedBrand) {
     return (
@@ -137,12 +146,25 @@ export default function ExplorePage() {
             onClick={() => {
               setSelectedBrand(null);
               setSelectedCategory(undefined);
+              setBrandProductSearch("");
             }}
             className="flex-shrink-0"
           >
             <ChevronLeft size={20} className="text-stone" />
           </button>
           <h1 className="font-serif text-[26px] italic text-ink">{selectedBrand}</h1>
+        </div>
+
+        {/* Search within brand */}
+        <div className="relative mb-4">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-sand" />
+          <input
+            type="text"
+            value={brandProductSearch}
+            onChange={(e) => setBrandProductSearch(e.target.value)}
+            placeholder={`Search ${selectedBrand}...`}
+            className="w-full bg-cream rounded-lg border border-parchment py-2.5 pl-9 pr-4 font-sans text-base text-ink placeholder:text-sand focus:outline-none focus:ring-1 focus:ring-stone"
+          />
         </div>
 
         {brandCategories.length > 1 && (
@@ -171,14 +193,14 @@ export default function ExplorePage() {
 
         {featuredLoading ? (
           <LoadingSpinner className="py-8" />
-        ) : featured && featured.length === 0 ? (
+        ) : brandProductsFiltered && brandProductsFiltered.length === 0 ? (
           <EmptyState
-            title="No products in this category"
-            description={`${selectedBrand} doesn't have products in this category yet.`}
+            title={brandProductSearch ? "No matching products" : "No products in this category"}
+            description={brandProductSearch ? "Try a different search term." : `${selectedBrand} doesn't have products in this category yet.`}
           />
         ) : (
           <div className="flex flex-col gap-1">
-            {featured?.map((product) => (
+            {brandProductsFiltered?.map((product) => (
               <ProductRow
                 key={product.product_id}
                 product={product}
