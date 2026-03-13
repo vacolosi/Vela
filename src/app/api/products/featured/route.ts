@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     .from("products")
     .select("product_id, brand, product_name, category, subcategory, price, image_url")
     .order("created_at", { ascending: false })
-    .limit(brand ? 50 : 10);
+    .limit(50);
 
   if (category) {
     query = query.eq("category", category);
