@@ -42,7 +42,7 @@ export const SHADE_DEPTHS = [
 export const UNDERTONES = ["Warm", "Cool", "Neutral", "Olive"] as const;
 
 // Product categories
-export const PRODUCT_CATEGORIES = ["skincare", "makeup", "body", "hair"] as const;
+export const PRODUCT_CATEGORIES = ["skincare", "makeup", "body", "hair", "fragrance", "nails", "tools", "accessories"] as const;
 export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 
 // Conflict severity levels

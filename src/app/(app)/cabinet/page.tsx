@@ -6,7 +6,7 @@ import { CabinetItem } from "@/components/cabinet/cabinet-item";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/ui/empty-state";
 
-const TABS = ["All", "Skincare", "Makeup", "Hair", "Body"] as const;
+const TABS = ["All", "Skincare", "Makeup", "Hair", "Body", "Fragrance", "Nails", "Tools", "Accessories"] as const;
 type Tab = (typeof TABS)[number];
 
 function getTag(product: {
@@ -56,12 +56,12 @@ export default function CabinetPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-4 mb-4 border-b border-parchment">
+      <div className="flex gap-4 mb-4 border-b border-parchment overflow-x-auto scrollbar-hide">
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`pb-2 font-sans text-[10px] uppercase tracking-[0.06em] transition-colors ${
+            className={`pb-2 font-sans text-[10px] uppercase tracking-[0.06em] whitespace-nowrap transition-colors ${
               activeTab === tab
                 ? "text-ink font-medium border-b-2 border-ink"
                 : "text-stone font-light"

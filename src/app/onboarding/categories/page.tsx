@@ -7,7 +7,7 @@ import { useUser } from "@/providers/supabase-provider";
 
 type CategoryLevel = "active" | "occasional" | "inactive";
 
-const CATEGORIES = ["Skincare", "Makeup", "Hair", "Body"] as const;
+const CATEGORIES = ["Skincare", "Makeup", "Hair", "Body", "Fragrance", "Nails", "Tools", "Accessories"] as const;
 const LEVELS: { label: string; value: CategoryLevel }[] = [
   { label: "Active", value: "active" },
   { label: "Occasional", value: "occasional" },
@@ -22,6 +22,10 @@ export default function CategoriesPage() {
     makeup: "inactive",
     hair: "inactive",
     body: "inactive",
+    fragrance: "inactive",
+    nails: "inactive",
+    tools: "inactive",
+    accessories: "inactive",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +47,10 @@ export default function CategoriesPage() {
         category_makeup: selections.makeup,
         category_hair: selections.hair,
         category_body: selections.body,
+        category_fragrance: selections.fragrance,
+        category_nails: selections.nails,
+        category_tools: selections.tools,
+        category_accessories: selections.accessories,
       })
       .eq("id", user.id);
 

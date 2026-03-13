@@ -100,6 +100,10 @@ export async function POST(request: NextRequest) {
     category_makeup: profileRes.data.category_makeup ?? "inactive",
     category_hair: profileRes.data.category_hair ?? "inactive",
     category_body: profileRes.data.category_body ?? "inactive",
+    category_fragrance: profileRes.data.category_fragrance ?? "inactive",
+    category_nails: profileRes.data.category_nails ?? "inactive",
+    category_tools: profileRes.data.category_tools ?? "inactive",
+    category_accessories: profileRes.data.category_accessories ?? "inactive",
     preferences: profileRes.data.preferences ?? {},
   };
 

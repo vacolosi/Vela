@@ -28,6 +28,10 @@ CREATE TABLE public.profiles (
   category_makeup TEXT DEFAULT 'inactive' CHECK (category_makeup IN ('active','occasional','inactive')),
   category_hair TEXT DEFAULT 'inactive' CHECK (category_hair IN ('active','occasional','inactive')),
   category_body TEXT DEFAULT 'inactive' CHECK (category_body IN ('active','occasional','inactive')),
+  category_fragrance TEXT DEFAULT 'inactive' CHECK (category_fragrance IN ('active','occasional','inactive')),
+  category_nails TEXT DEFAULT 'inactive' CHECK (category_nails IN ('active','occasional','inactive')),
+  category_tools TEXT DEFAULT 'inactive' CHECK (category_tools IN ('active','occasional','inactive')),
+  category_accessories TEXT DEFAULT 'inactive' CHECK (category_accessories IN ('active','occasional','inactive')),
   
   -- Preferences
   preferences JSONB DEFAULT '{"clean":false,"fragrance_free":false,"vegan":false,"cruelty_free":false}',
@@ -72,7 +76,7 @@ CREATE TABLE public.products (
   product_id TEXT PRIMARY KEY,                -- e.g. RB-M-SPLB
   brand TEXT NOT NULL,
   product_name TEXT NOT NULL,
-  category TEXT NOT NULL CHECK (category IN ('skincare','makeup','body','hair')),
+  category TEXT NOT NULL CHECK (category IN ('skincare','makeup','body','hair','fragrance','nails','tools','accessories')),
   subcategory TEXT NOT NULL,                  -- e.g. Blush, Foundation, AHA, Retinoid
   zone TEXT CHECK (zone IN ('Face','Cheek','Lip','Eye')),  -- makeup only, null for skincare
   

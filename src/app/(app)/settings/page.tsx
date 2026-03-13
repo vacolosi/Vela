@@ -181,7 +181,7 @@ export default function SettingsPage() {
 
       {/* CATEGORIES */}
       <SectionLabel>Categories</SectionLabel>
-      {(["skincare", "makeup", "hair", "body"] as const).map((cat) => {
+      {(["skincare", "makeup", "hair", "body", "fragrance", "nails", "tools", "accessories"] as const).map((cat) => {
         const level = categories?.[cat] ?? null;
         return (
           <Row

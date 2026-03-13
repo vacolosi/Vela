@@ -12,6 +12,10 @@ const CATEGORIES = [
   { key: "makeup", label: "Makeup" },
   { key: "hair", label: "Hair" },
   { key: "body", label: "Body" },
+  { key: "fragrance", label: "Fragrance" },
+  { key: "nails", label: "Nails" },
+  { key: "tools", label: "Tools" },
+  { key: "accessories", label: "Accessories" },
 ] as const;
 
 type CategoryKey = (typeof CATEGORIES)[number]["key"];

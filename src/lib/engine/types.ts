@@ -7,7 +7,7 @@ export interface Product {
   product_id: string;
   brand: string;
   product_name: string;
-  category: "skincare" | "makeup" | "body" | "hair";
+  category: "skincare" | "makeup" | "body" | "hair" | "fragrance" | "nails" | "tools" | "accessories";
   subcategory: string;
   zone: string | null;
   primary_functions: string[];
@@ -38,6 +38,10 @@ export interface UserProfile {
   category_makeup: string;
   category_hair: string;
   category_body: string;
+  category_fragrance: string;
+  category_nails: string;
+  category_tools: string;
+  category_accessories: string;
   preferences: Record<string, boolean>;
 }
 
