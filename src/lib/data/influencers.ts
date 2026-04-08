@@ -6,7 +6,7 @@ export interface Influencer {
   name: string;
   bio: string;
   products: number;
-  edits: number;
+  looks: number;
   saves: string;
   cabinet: {
     brand: string;
@@ -21,7 +21,7 @@ export const INFLUENCERS: Influencer[] = [
     name: "Alix Earle",
     bio: "Full glam enthusiast. Skincare-first. Loves a dewy base and bold lip.",
     products: 47,
-    edits: 6,
+    looks: 6,
     saves: "12.4k",
     cabinet: [
       { brand: "Charlotte Tilbury", productName: "Airbrush Flawless Foundation", category: "makeup" },
@@ -44,7 +44,7 @@ export const INFLUENCERS: Influencer[] = [
     name: "Hyram",
     bio: "Skincare specialist. Science-backed, no-nonsense recommendations.",
     products: 23,
-    edits: 3,
+    looks: 3,
     saves: "8.2k",
     cabinet: [
       { brand: "CeraVe", productName: "Hydrating Facial Cleanser", category: "skincare" },
@@ -62,7 +62,7 @@ export const INFLUENCERS: Influencer[] = [
     name: "Mikayla Nogueira",
     bio: "Makeup artist & beauty creator. All about full coverage and bold looks.",
     products: 35,
-    edits: 8,
+    looks: 8,
     saves: "5.9k",
     cabinet: [
       { brand: "Estee Lauder", productName: "Double Wear Stay-in-Place Foundation", category: "makeup" },

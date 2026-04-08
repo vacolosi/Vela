@@ -3,10 +3,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { X, Camera, Image as ImageIcon, Search, Check, Loader2 } from "lucide-react";
-import { useAddToCabinet } from "@/lib/hooks/use-cabinet";
+import { useAddToCabinet, useCabinet } from "@/lib/hooks/use-cabinet";
 import { useProductSearch } from "@/lib/hooks/use-products";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/providers/supabase-provider";
+import { ProductDot } from "@/components/product/product-dot";
+import Link from "next/link";
 
 interface ScanResult {
   detected_name: string;
@@ -22,7 +24,7 @@ interface ScanResult {
   confirmed: boolean;
 }
 
-type Phase = "camera" | "processing" | "results" | "manual-search";
+type Phase = "camera" | "processing" | "results" | "manual-search" | "bulk";
 
 export default function ScanPage() {
   const router = useRouter();
@@ -39,11 +41,19 @@ export default function ScanPage() {
   const [added, setAdded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Bulk add state
+  const [bulkItems, setBulkItems] = useState<ScanResult[]>([]);
+  const [bulkAdding, setBulkAdding] = useState(false);
+
   // Manual search state
   const [searchQuery, setSearchQuery] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [manualSearchQuery, setManualSearchQuery] = useState("");
   const { data: searchResults } = useProductSearch(editingIndex !== null ? searchQuery : manualSearchQuery);
+
+  // Recent scans — pull from cabinet (most recent additions)
+  const { data: cabinetItems } = useCabinet();
+  const recentScans = (cabinetItems ?? []).slice(0, 6);
 
   const addToCabinet = useAddToCabinet();
 
@@ -60,7 +70,6 @@ export default function ScanPage() {
     }
   }, []);
 
-  // Attach stream to video element after it mounts
   useEffect(() => {
     if (cameraActive && streamRef.current && videoRef.current) {
       videoRef.current.srcObject = streamRef.current;
@@ -75,8 +84,8 @@ export default function ScanPage() {
     setCameraActive(false);
   }, []);
 
-  const recognizeImage = useCallback(async (base64: string) => {
-    setPhase("processing");
+  const recognizeImage = useCallback(async (base64: string, isBulk = false) => {
+    if (!isBulk) setPhase("processing");
     setError(null);
 
     try {
@@ -90,7 +99,7 @@ export default function ScanPage() {
 
       if (data.error) {
         setError(data.error);
-        setPhase("camera");
+        if (!isBulk) setPhase("camera");
         return;
       }
 
@@ -101,15 +110,20 @@ export default function ScanPage() {
         })
       );
 
-      setResults(scanResults);
-      setPhase("results");
+      if (isBulk) {
+        // In bulk mode, add to running list
+        setBulkItems((prev) => [...prev, ...scanResults]);
+      } else {
+        setResults(scanResults);
+        setPhase("results");
+      }
     } catch {
       setError("Failed to process image. Please try again.");
-      setPhase("camera");
+      if (!isBulk) setPhase("camera");
     }
   }, []);
 
-  const captureAndRecognize = useCallback(async () => {
+  const captureAndRecognize = useCallback(async (isBulk = false) => {
     if (!videoRef.current || !canvasRef.current) return;
 
     const video = videoRef.current;
@@ -121,10 +135,10 @@ export default function ScanPage() {
     if (!ctx) return;
     ctx.drawImage(video, 0, 0);
 
-    stopCamera();
+    if (!isBulk) stopCamera();
 
     const base64 = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
-    recognizeImage(base64);
+    recognizeImage(base64, isBulk);
   }, [stopCamera, recognizeImage]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,13 +149,11 @@ export default function ScanPage() {
     reader.onload = () => {
       const result = reader.result as string;
       const base64 = result.split(",")[1];
-      recognizeImage(base64);
+      recognizeImage(base64, phase === "bulk");
     };
     reader.readAsDataURL(file);
-
-    // Reset input so same file can be selected again
     e.target.value = "";
-  }, [recognizeImage]);
+  }, [recognizeImage, phase]);
 
   const toggleConfirm = (index: number) => {
     setResults((prev) =>
@@ -197,13 +209,11 @@ export default function ScanPage() {
 
     setAdding(true);
 
-    // Request unmatched products
     const unmatched = results.filter((r) => !r.matched_product);
     for (const item of unmatched) {
       await requestProduct(item.detected_name);
     }
 
-    // Add confirmed products to cabinet
     for (const item of confirmed) {
       try {
         await addToCabinet.mutateAsync({
@@ -219,13 +229,113 @@ export default function ScanPage() {
     setTimeout(() => router.push("/cabinet"), 1500);
   };
 
+  // Bulk add: add all confirmed items
+  const handleBulkDone = async () => {
+    const confirmed = bulkItems.filter((r) => r.confirmed && r.matched_product);
+    if (confirmed.length === 0) {
+      setPhase("camera");
+      setBulkItems([]);
+      return;
+    }
+
+    setBulkAdding(true);
+    for (const item of confirmed) {
+      try {
+        await addToCabinet.mutateAsync({
+          productId: item.matched_product!.product_id,
+        });
+      } catch {
+        // Skip duplicates
+      }
+    }
+    setBulkAdding(false);
+    setBulkItems([]);
+    stopCamera();
+    router.push("/cabinet");
+  };
+
   const confirmedCount = results.filter(
     (r) => r.confirmed && r.matched_product
   ).length;
 
+  // ── Bulk add mode — camera stays hot ──
+  if (phase === "bulk") {
+    if (!cameraActive && bulkItems.length === 0) {
+      startCamera();
+    }
+
+    return (
+      <div className="bg-ink h-[calc(100dvh-60px)] flex flex-col relative">
+        <button
+          onClick={() => { stopCamera(); setPhase("camera"); setBulkItems([]); }}
+          className="absolute top-4 left-4 text-stone z-20"
+        >
+          <X size={22} />
+        </button>
+
+        <p className="absolute top-4 left-1/2 -translate-x-1/2 font-sans text-[10px] uppercase tracking-[0.18em] text-stone z-20">
+          Bulk Add
+        </p>
+
+        {/* Camera viewfinder */}
+        <div className="flex-1 relative overflow-hidden bg-espresso">
+          {cameraActive && (
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+            />
+          )}
+
+          {/* Capture button */}
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center">
+            <button
+              onClick={() => captureAndRecognize(true)}
+              className="bg-cream text-ink rounded-full p-5 shadow-lg"
+            >
+              <Camera size={28} />
+            </button>
+          </div>
+        </div>
+
+        {/* Running list at bottom */}
+        {bulkItems.length > 0 && (
+          <div className="flex-shrink-0 bg-espresso border-t border-walnut/30 px-5 py-3 max-h-[200px] overflow-y-auto">
+            {bulkItems.map((item, i) => (
+              <div key={i} className="flex items-center gap-2 py-1.5">
+                <div className={`w-2 h-2 rounded-full ${item.matched_product ? "bg-sage" : "bg-stone"}`} />
+                <p className="text-cream text-xs truncate flex-1">
+                  {item.matched_product
+                    ? `${item.matched_product.brand} ${item.matched_product.product_name}`
+                    : item.detected_name}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Done button */}
+        <div className="flex-shrink-0 px-5 py-4 bg-ink">
+          <button
+            onClick={handleBulkDone}
+            disabled={bulkAdding}
+            className="w-full bg-cream rounded-lg py-3 font-sans text-sm text-ink disabled:opacity-40"
+          >
+            {bulkAdding
+              ? "Adding..."
+              : `Done — add ${bulkItems.filter((r) => r.confirmed && r.matched_product).length} product${bulkItems.filter((r) => r.confirmed && r.matched_product).length !== 1 ? "s" : ""} to cabinet`}
+          </button>
+        </div>
+
+        <canvas ref={canvasRef} className="hidden" />
+      </div>
+    );
+  }
+
   // ── Camera phase ──
   if (phase === "camera") {
-    // Live camera mode
     if (cameraActive) {
       return (
         <div className="bg-ink h-[calc(100dvh-60px)] flex flex-col relative">
@@ -236,7 +346,6 @@ export default function ScanPage() {
             <X size={22} />
           </button>
 
-          {/* Full-screen viewfinder */}
           <div className="flex-1 relative overflow-hidden bg-espresso">
             <video
               ref={videoRef}
@@ -251,10 +360,15 @@ export default function ScanPage() {
             <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-cream/50 rounded-bl-sm" />
             <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-cream/50 rounded-br-sm" />
 
-            {/* Capture button overlay at bottom */}
+            {/* Instruction */}
+            <div className="absolute top-12 left-0 right-0 text-center">
+              <p className="font-sans text-xs text-cream/80">Show the front label</p>
+            </div>
+
+            {/* Capture button */}
             <div className="absolute bottom-8 left-0 right-0 flex justify-center">
               <button
-                onClick={captureAndRecognize}
+                onClick={() => captureAndRecognize()}
                 className="bg-cream text-ink rounded-full p-5 shadow-lg"
               >
                 <Camera size={28} />
@@ -277,16 +391,16 @@ export default function ScanPage() {
           <X size={22} />
         </button>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-6">
-          <p className="font-sans text-[10px] uppercase tracking-[0.18em] text-stone mb-8">
-            Add products by photo
+        <div className="flex-1 flex flex-col px-6 pt-16">
+          <p className="font-sans text-[10px] uppercase tracking-[0.18em] text-stone mb-8 text-center">
+            Show the front label
           </p>
 
           {error && (
             <p className="text-risk text-xs text-center mb-4">{error}</p>
           )}
 
-          <div className="flex flex-col gap-3 w-full max-w-xs">
+          <div className="flex flex-col gap-3 w-full max-w-xs mx-auto">
             <button
               onClick={startCamera}
               className="flex items-center justify-center gap-3 bg-cream text-ink rounded-lg py-4 font-sans text-sm"
@@ -312,16 +426,48 @@ export default function ScanPage() {
             className="hidden"
           />
 
-          <p className="text-clay text-[10px] text-center mt-6 max-w-xs">
-            Take or upload a photo of one or more products to identify them.
-          </p>
+          {/* Bulk add link — always visible */}
+          <button
+            onClick={() => { setPhase("bulk"); startCamera(); }}
+            className="mt-6 font-sans text-[11px] text-vela-blue text-center"
+          >
+            Bulk add &rsaquo;
+          </button>
 
           <button
             onClick={() => setPhase("manual-search")}
-            className="mt-6 font-sans text-[11px] text-vela-blue"
+            className="mt-3 font-sans text-[11px] text-clay text-center"
           >
             Or search by name instead
           </button>
+
+          {/* Recent scans row */}
+          {recentScans.length > 0 && (
+            <div className="mt-8">
+              <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-stone mb-3">
+                Recent Scans
+              </p>
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                {recentScans.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/product/${item.product_id}`}
+                    className="flex-shrink-0 w-[70px] flex flex-col items-center gap-1.5"
+                  >
+                    <div className="rounded-md bg-espresso border border-walnut/30 p-1">
+                      <ProductDot
+                        size={32}
+                        imageUrl={item.shade?.product_image_url || item.product?.image_url}
+                      />
+                    </div>
+                    <p className="line-clamp-2 text-center font-sans text-[9px] leading-tight text-stone">
+                      {item.product?.product_name}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <canvas ref={canvasRef} className="hidden" />
@@ -377,6 +523,14 @@ export default function ScanPage() {
             />
           </div>
 
+          {/* Bulk add link */}
+          <button
+            onClick={() => { setPhase("bulk"); startCamera(); }}
+            className="w-full text-center font-sans text-[11px] text-vela-blue mb-4"
+          >
+            Bulk add &rsaquo;
+          </button>
+
           {manualSearchQuery.length >= 2 && searchResults && searchResults.length === 0 && (
             <p className="text-stone text-xs text-center py-4">No products found</p>
           )}
@@ -405,7 +559,6 @@ export default function ScanPage() {
   // ── Results phase ──
   return (
     <div className="bg-ink h-[calc(100dvh-60px)] flex flex-col">
-      {/* Header */}
       <div className="px-5 pt-6 pb-4 flex items-center justify-between flex-shrink-0">
         <button onClick={() => { setPhase("camera"); setResults([]); setAdded(false); }} className="text-stone">
           <X size={22} />
@@ -416,7 +569,6 @@ export default function ScanPage() {
         <div className="w-[22px]" />
       </div>
 
-      {/* Results list — scrollable */}
       <div className="flex-1 overflow-y-auto px-5 min-h-0">
         {results.map((result, index) => (
           <div key={index} className="border-b border-espresso py-4">
@@ -507,7 +659,6 @@ export default function ScanPage() {
         ))}
       </div>
 
-      {/* Pinned bottom actions */}
       <div className="flex-shrink-0 px-5 pb-4 pt-2 bg-ink">
         <button
           onClick={() => setPhase("manual-search")}

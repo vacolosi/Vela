@@ -8,6 +8,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                           */
@@ -45,7 +46,7 @@ function Row({
             {value}
           </span>
         )}
-        {chevron && <span className="text-sand text-sm">›</span>}
+        {chevron && <span className="text-sand text-sm">&rsaquo;</span>}
       </span>
     </div>
   );
@@ -68,26 +69,22 @@ function ToggleRow({
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Participation color                                               */
-/* ------------------------------------------------------------------ */
-
-function participationColor(level: string | undefined | null): string {
-  if (!level) return "font-sans text-xs text-stone font-light";
-  const l = level.toLowerCase();
-  if (l === "active") return "font-sans text-xs text-sage font-light";
-  if (l === "occasional") return "font-sans text-xs text-warm font-light";
-  return "font-sans text-xs text-stone font-light";
-}
-
-function participationLabel(level: string | undefined | null): string {
-  if (!level) return "Not a user";
-  const l = level.toLowerCase();
-  if (l === "active") return "Active";
-  if (l === "occasional") return "Occasional";
-  if (l === "inactive" || l === "not a user") return "Not a user";
-  // Capitalize first letter for anything else
-  return level.charAt(0).toUpperCase() + level.slice(1);
+function CategoryToggleRow({
+  label,
+  level,
+  onToggle,
+}: {
+  label: string;
+  level: string;
+  onToggle: (v: boolean) => void;
+}) {
+  const isActive = level === "active" || level === "occasional";
+  return (
+    <div className="flex justify-between items-center py-3 border-b border-parchment">
+      <span className="font-sans text-[13px] text-ink">{label}</span>
+      <Switch checked={isActive} onCheckedChange={onToggle} size="sm" />
+    </div>
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -101,7 +98,6 @@ export default function SettingsPage() {
   const supabase = createClient();
   const queryClient = useQueryClient();
 
-  /* -- preference toggle handler ----------------------------------- */
   const handlePreferenceToggle = useCallback(
     async (key: string, value: boolean) => {
       if (!user) return;
@@ -115,7 +111,6 @@ export default function SettingsPage() {
         .update({ preferences: updated })
         .eq("id", user.id);
 
-      // Optimistically update the cache
       queryClient.setQueryData(
         ["profile", user.id],
         (old: Record<string, unknown> | undefined) =>
@@ -125,13 +120,32 @@ export default function SettingsPage() {
     [user, profile, supabase, queryClient]
   );
 
-  /* -- sign out ---------------------------------------------------- */
+  const handleCategoryToggle = useCallback(
+    async (cat: string, value: boolean) => {
+      if (!user) return;
+
+      const field = `category_${cat}`;
+      const newLevel = value ? "active" : "inactive";
+
+      await supabase
+        .from("profiles")
+        .update({ [field]: newLevel })
+        .eq("id", user.id);
+
+      queryClient.setQueryData(
+        ["profile", user.id],
+        (old: Record<string, unknown> | undefined) =>
+          old ? { ...old, [field]: newLevel } : old
+      );
+    },
+    [user, supabase, queryClient]
+  );
+
   const handleSignOut = useCallback(async () => {
     await supabase.auth.signOut();
     router.push("/");
   }, [supabase, router]);
 
-  /* -- derived values --------------------------------------------- */
   const prefs = (profile?.preferences as Record<string, boolean> | null) ?? {};
 
   const shadeValue = [profile?.shade_depth, profile?.shade_undertone]
@@ -142,14 +156,11 @@ export default function SettingsPage() {
     ? (profile.skincare_goals as string[]).join(", ")
     : "";
 
-  const concernsValue = Array.isArray(profile?.concerns)
-    ? (profile.concerns as string[]).join(", ")
+  const concernsValue = Array.isArray(profile?.skincare_concerns)
+    ? (profile.skincare_concerns as string[]).join(", ")
     : "";
 
-  const categories = profile?.categories as
-    | Record<string, string>
-    | null
-    | undefined;
+  const bio = (profile?.bio as string) ?? "";
 
   if (profileLoading) {
     return <LoadingSpinner className="min-h-[60vh]" />;
@@ -157,16 +168,23 @@ export default function SettingsPage() {
 
   return (
     <div className="px-6 pb-28">
-      {/* Header */}
-      <h1 className="font-serif text-[26px] italic text-ink pt-6 pb-2">
-        Settings
-      </h1>
+      {/* Header — breadcrumb: Cabinet › Settings */}
+      <div className="flex items-center gap-2 pt-6 pb-4">
+        <button onClick={() => router.push("/cabinet")} className="flex-shrink-0">
+          <ChevronLeft size={18} className="text-stone" />
+        </button>
+        <p className="font-sans text-xs text-stone">
+          Cabinet &rsaquo; <span className="text-ink">Settings</span>
+        </p>
+      </div>
 
       {/* PROFILE */}
       <SectionLabel>Profile</SectionLabel>
       <Row label="Shade Profile" value={shadeValue || "Not set"} />
-      <Row label="Skincare Goals" value={goalsValue || "Not set"} />
-      <Row label="Concerns" value={concernsValue || "Not set"} />
+      <Row label="Skin Type" value="Not set" />
+      <Row label="Skincare Concerns" value={concernsValue || "Not set"} />
+      <Row label="Haircare Concerns" value="Not set" />
+      <Row label="Bio" value={bio || "Edit"} />
 
       {/* MAKEUP */}
       <SectionLabel>Makeup</SectionLabel>
@@ -174,22 +192,21 @@ export default function SettingsPage() {
         label="Identity"
         value={(profile?.makeup_identity as string) || "Not set"}
       />
-      <Row
-        label="Frequency"
-        value={(profile?.makeup_frequency as string) || "Not set"}
-      />
 
-      {/* CATEGORIES */}
+      {/* CATEGORIES — toggle switches */}
       <SectionLabel>Categories</SectionLabel>
-      {(["skincare", "makeup", "hair", "body", "fragrance", "nails", "tools", "accessories"] as const).map((cat) => {
-        const level = categories?.[cat] ?? null;
+      {([
+        { key: "skincare", label: "Skincare" },
+        { key: "makeup", label: "Makeup" },
+        { key: "hair", label: "Haircare" },
+      ] as const).map((cat) => {
+        const level = (profile?.[`category_${cat.key}`] as string) ?? "inactive";
         return (
-          <Row
-            key={cat}
-            label={cat.charAt(0).toUpperCase() + cat.slice(1)}
-            value={participationLabel(level)}
-            valueClassName={participationColor(level)}
-            chevron={false}
+          <CategoryToggleRow
+            key={cat.key}
+            label={cat.label}
+            level={level}
+            onToggle={(v) => handleCategoryToggle(cat.key, v)}
           />
         );
       })}
@@ -198,8 +215,8 @@ export default function SettingsPage() {
       <SectionLabel>Preferences</SectionLabel>
       <ToggleRow
         label="Clean beauty"
-        checked={!!prefs.clean_beauty}
-        onToggle={(v) => handlePreferenceToggle("clean_beauty", v)}
+        checked={!!prefs.clean}
+        onToggle={(v) => handlePreferenceToggle("clean", v)}
       />
       <ToggleRow
         label="Fragrance-free"
@@ -223,14 +240,14 @@ export default function SettingsPage() {
       <Row label="Reset Profile" />
       <div className="flex justify-between items-center py-3 border-b border-parchment">
         <span className="font-sans text-[13px] text-risk">Clear Cabinet</span>
-        <span className="text-sand text-sm">›</span>
+        <span className="text-sand text-sm">&rsaquo;</span>
       </div>
       <button
         onClick={handleSignOut}
         className="flex justify-between items-center py-3 border-b border-parchment w-full text-left"
       >
         <span className="font-sans text-[13px] text-risk">Sign Out</span>
-        <span className="text-sand text-sm">›</span>
+        <span className="text-sand text-sm">&rsaquo;</span>
       </button>
     </div>
   );

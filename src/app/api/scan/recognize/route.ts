@@ -43,7 +43,9 @@ export async function POST(request: NextRequest) {
             },
             {
               type: "text",
-              text: `Look at this image of beauty/skincare/makeup/hair products. List every product you can identify. For each product, extract the brand name and product name as accurately as possible.
+              text: `Look at this image of beauty/skincare/makeup/hair products. Identify every product using ALL available visual cues: text on the label, brand logos, package shape, bottle/tube design, cap color, and overall packaging color scheme. Even if text is partially obscured, use the combination of visual signals to identify the product.
+
+For each product, extract the brand name and product name as accurately as possible.
 
 Return ONLY valid JSON in this exact format, no other text:
 [{"brand": "Brand Name", "product_name": "Product Name"}, ...]

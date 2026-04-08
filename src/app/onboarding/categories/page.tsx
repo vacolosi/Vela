@@ -7,7 +7,7 @@ import { useUser } from "@/providers/supabase-provider";
 
 type CategoryLevel = "active" | "occasional" | "inactive";
 
-const CATEGORIES = ["Skincare", "Makeup", "Hair", "Body", "Fragrance", "Nails", "Tools", "Accessories"] as const;
+const CATEGORIES = ["Skincare", "Makeup", "Haircare", "Body", "Fragrance", "Nails", "Tools", "Accessories"] as const;
 const LEVELS: { label: string; value: CategoryLevel }[] = [
   { label: "Active", value: "active" },
   { label: "Occasional", value: "occasional" },
@@ -86,7 +86,7 @@ export default function CategoriesPage() {
 
       <div className="mt-8 flex flex-col gap-4">
         {CATEGORIES.map((cat) => {
-          const key = cat.toLowerCase();
+          const key = cat === "Haircare" ? "hair" : cat.toLowerCase();
           return (
             <div
               key={key}

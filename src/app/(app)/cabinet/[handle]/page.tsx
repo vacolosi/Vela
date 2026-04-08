@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Bookmark } from "lucide-react";
 import { getInfluencer } from "@/lib/data/influencers";
 import { useCabinet } from "@/lib/hooks/use-cabinet";
 import { createClient } from "@/lib/supabase/client";
@@ -14,7 +14,7 @@ const supabase = createClient();
 const CATEGORIES = [
   { key: "skincare", label: "Skincare" },
   { key: "makeup", label: "Makeup" },
-  { key: "hair", label: "Hair" },
+  { key: "hair", label: "Haircare" },
   { key: "body", label: "Body" },
   { key: "fragrance", label: "Fragrance" },
   { key: "nails", label: "Nails" },
@@ -40,8 +40,9 @@ export default function InfluencerCabinetPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
   const [products, setProducts] = useState<MatchedProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState(false);
+  const [showNotifyToast, setShowNotifyToast] = useState(false);
 
-  // Look up influencer's products in the DB by brand + name
   useEffect(() => {
     if (!influencer) return;
 
@@ -49,7 +50,6 @@ export default function InfluencerCabinetPage() {
       setLoading(true);
       const matched: MatchedProduct[] = [];
 
-      // Search for each product in the influencer's cabinet
       for (const item of influencer!.cabinet) {
         const { data } = await supabase
           .from("products")
@@ -61,7 +61,6 @@ export default function InfluencerCabinetPage() {
         if (data && data.length > 0) {
           matched.push(data[0] as MatchedProduct);
         } else {
-          // Fallback: create a placeholder entry
           matched.push({
             product_id: `placeholder-${item.brand}-${item.productName}`,
             brand: item.brand,
@@ -87,26 +86,32 @@ export default function InfluencerCabinetPage() {
         <button onClick={() => router.back()} className="font-sans text-[13px] text-stone mb-6 block">
           &larr; Back
         </button>
-        <p className="font-sans text-sm text-clay">Influencer not found.</p>
+        <p className="font-sans text-sm text-clay">Creator not found.</p>
       </div>
     );
   }
 
-  // Which categories does this influencer actually have products in?
   const availableCategories = CATEGORIES.filter((cat) =>
     products.some((p) => p.category?.toLowerCase() === cat.key)
   );
 
-  // Filter products by selected category
   const filteredProducts = selectedCategory
     ? products.filter((p) => p.category?.toLowerCase() === selectedCategory)
     : products;
 
-  // Find which products the user has in common
   const userProductIds = new Set(
     (userCabinet ?? []).map((item: { product_id: string }) => item.product_id)
   );
   const inCommonCount = products.filter((p) => userProductIds.has(p.product_id)).length;
+
+  const handleSave = () => {
+    setSaved(true);
+    setShowNotifyToast(true);
+  };
+
+  const handleNotifyResponse = () => {
+    setShowNotifyToast(false);
+  };
 
   return (
     <div className="min-h-[calc(100vh-60px)] bg-white px-5 pb-8">
@@ -115,8 +120,44 @@ export default function InfluencerCabinetPage() {
         <button onClick={() => router.back()} className="flex-shrink-0">
           <ChevronLeft size={20} className="text-stone" />
         </button>
-        <div className="font-serif text-lg italic text-ink">Cabinet</div>
+        <div className="font-serif text-lg italic text-ink flex-1">Cabinet</div>
+        {/* Save button only — no Compare */}
+        <button
+          onClick={handleSave}
+          disabled={saved}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-sans transition-colors ${
+            saved
+              ? "bg-sage/10 border-sage/30 text-sage"
+              : "border-sand text-clay"
+          }`}
+        >
+          <Bookmark size={12} className={saved ? "fill-sage" : ""} />
+          {saved ? "Saved" : "Save"}
+        </button>
       </div>
+
+      {/* Notify toast */}
+      {showNotifyToast && (
+        <div className="mb-4 p-3 bg-cream rounded-lg border border-parchment">
+          <p className="font-sans text-xs text-ink mb-2">
+            Cabinet saved. Get notified when they add products?
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleNotifyResponse}
+              className="px-3 py-1.5 bg-ink rounded text-cream font-sans text-[11px]"
+            >
+              Yes
+            </button>
+            <button
+              onClick={handleNotifyResponse}
+              className="px-3 py-1.5 border border-sand rounded text-clay font-sans text-[11px]"
+            >
+              No thanks
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Profile */}
       <div className="text-center py-5">
@@ -131,11 +172,11 @@ export default function InfluencerCabinetPage() {
           {influencer.bio}
         </p>
 
-        {/* Stats */}
+        {/* Stats — "Looks" not "Edits" */}
         <div className="flex justify-center gap-7 mt-4">
           {[
             { value: String(influencer.products), label: "Products" },
-            { value: String(influencer.edits), label: "Edits" },
+            { value: String(influencer.looks), label: "Looks" },
             { value: influencer.saves, label: "Saves" },
           ].map((stat) => (
             <div key={stat.label}>
@@ -148,17 +189,17 @@ export default function InfluencerCabinetPage() {
         </div>
       </div>
 
-      {/* In common callout */}
+      {/* "You share X products" card */}
       {inCommonCount > 0 && (
-        <div className="mx-0 mb-4 p-3 bg-vela-blue/10 rounded-lg flex items-center gap-2.5">
-          <div className="w-[7px] h-[7px] rounded-full bg-vela-blue flex-shrink-0" />
-          <p className="font-sans text-[11px] text-vela-blue font-light leading-snug">
-            You share {inCommonCount} product{inCommonCount !== 1 ? "s" : ""}. See how your routines compare.
+        <div className="mx-0 mb-4 p-3 bg-sage/10 rounded-lg flex items-center gap-2.5">
+          <div className="w-[7px] h-[7px] rounded-full bg-sage flex-shrink-0" />
+          <p className="font-sans text-[11px] text-sage font-light leading-snug">
+            You share {inCommonCount} product{inCommonCount !== 1 ? "s" : ""}
           </p>
         </div>
       )}
 
-      {/* Category tabs */}
+      {/* Category tabs — "Haircare" not "Hair" */}
       {availableCategories.length > 1 && (
         <div className="flex border-b border-parchment mb-3">
           <button
